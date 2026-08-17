@@ -18,3 +18,5 @@ app:
     topic-name: test-topic
     key-payload-file: samples/key.json
     value-payload-file: samples/value.json
+    # Schema Registry URL for integration isn't set yet: only list topics for now.
+    send-sample-message: false

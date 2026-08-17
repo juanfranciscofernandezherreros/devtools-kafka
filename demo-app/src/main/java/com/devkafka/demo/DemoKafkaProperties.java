@@ -17,4 +17,11 @@ public class DemoKafkaProperties {
     private String topicName;
     private String keyPayloadFile;
     private String valuePayloadFile;
+
+    /**
+     * When false, the runner only lists REST Proxy topics and skips the
+     * schema download + sample message send (useful for environments where
+     * the Schema Registry isn't configured yet).
+     */
+    private boolean sendSampleMessage = true;
 }

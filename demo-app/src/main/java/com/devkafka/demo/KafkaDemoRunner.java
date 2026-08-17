@@ -30,6 +30,11 @@ public class KafkaDemoRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("Existing REST Proxy topics: {}", restProxyClient.listTopics(properties.getRestProxyUrl()));
 
+        if (!properties.isSendSampleMessage()) {
+            log.info("app.kafka.send-sample-message=false, skipping schema download and sample message send.");
+            return;
+        }
+
         genericRunnerBean.run(
                 properties.getKeyPayloadFile(),
                 properties.getValuePayloadFile(),
