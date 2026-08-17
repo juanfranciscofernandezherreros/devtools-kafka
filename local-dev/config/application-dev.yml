@@ -32,6 +32,6 @@ library:
 # when calling runner.run(...).
 app:
   kafka:
-    rest-proxy-url: https://<kafka-rest-proxy-dev-host>/topics
+    rest-proxy-url: https://rft-confluent-cito-rest-rft-int-bec.ingress.cph01.ocp.six-group.net/topics
     schema-url-suffix: /versions/latest
     topic-name: test-topic
