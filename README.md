@@ -10,16 +10,22 @@ proyecto.
 
 ```
 .
-├── source/            Proyecto Maven (la librería en sí)
+├── source/             Proyecto Maven (la librería en sí)
 │   ├── pom.xml
 │   └── src/
-├── local-dev/          Infraestructura Kafka local para desarrollo/pruebas
-│   ├── docker-compose.yml     Zookeeper + Kafka + Schema Registry + REST Proxy
-│   ├── download-schemas.py    Descarga esquemas Avro desde un Schema Registry
-│   └── config/                 Properties de ejemplo para apps consumidoras
+├── demo-app/            App Spring Boot runnable que consume la librería
+│   ├── pom.xml
+│   ├── samples/                 Payloads de ejemplo (key.json, value.json)
+│   └── src/main/resources/      application-{local,dev,integration,qa}.yml
+├── local-dev/           Infraestructura Kafka local para desarrollo/pruebas
+│   ├── docker-compose.yml       Zookeeper + Kafka + Schema Registry + REST Proxy
+│   ├── register-demo-schemas.sh Registra los esquemas de ejemplo en el Schema Registry local
+│   └── config/                   Properties de ejemplo para apps consumidoras
 │       ├── application-local.yml
-│       └── application-dev.yml
-├── .gitlab-ci.yml      Pipeline (build backend Java, imagen "backend")
+│       ├── application-dev.yml
+│       ├── application-integration.yml
+│       └── application-qa.yml
+├── .gitlab-ci.yml       Pipeline (build backend Java, imagen "backend")
 └── sonar-project.properties
 ```
 
@@ -43,6 +49,10 @@ Paquetes internos (`com.devkafka.*`):
 - `avro` — utilidades para generar registros Avro de prueba y convertirlos a JSON
 - `exception` — excepciones propias de la librería
 
+Certificados TLS: se validan por defecto; solo se ignoran cuando
+`library.schema.ignore-ssl=true` (pensado para local/dev con certificados
+propios, no para producción).
+
 ## Compilar
 
 Requiere Java 17+ y Maven.
@@ -52,7 +62,7 @@ cd source
 mvn clean install
 ```
 
-Genera `source/target/rft-devtools-kafka-cucumber-1.0.0-SNAPSHOT.jar` y
+Genera `source/target/rft-devtools-kafka-cucumber-0.1.0-SNAPSHOT.jar` y
 corre la suite de tests (unitarios, sin dependencias externas).
 
 ## Levantar Kafka en local
@@ -66,6 +76,7 @@ las URLs como parámetro.
 cd local-dev
 docker compose up -d      # arranca Zookeeper, Kafka, Schema Registry y REST Proxy
 docker compose ps         # confirma que los 4 servicios estén "healthy"
+./register-demo-schemas.sh    # registra los esquemas de ejemplo (solo la primera vez)
 docker compose down -v    # para y limpia volúmenes
 ```
 
@@ -78,45 +89,32 @@ Puertos expuestos en el host:
 | Schema Registry | `8081` |
 | Kafka REST Proxy | `8082` |
 
-## Descargar esquemas Avro
+## Probarla en marcha: `demo-app`
 
-`local-dev/download-schemas.py` descarga esquemas desde un Schema Registry
-(local o real) a ficheros `.avsc` legibles. Solo usa la librería estándar
-de Python, no requiere `pip install`.
+La librería es un jar sin clase `main`, así que `demo-app/` es una app
+Spring Boot mínima que sí se puede arrancar, para ejercitar la librería de
+verdad contra un perfil:
 
 ```bash
-# todos los subjects registrados
-python local-dev/download-schemas.py --registry-url http://localhost:8081
-
-# solo key+value de un topic concreto
-python local-dev/download-schemas.py --registry-url http://localhost:8081 --topic test-topic
-
-# contra un entorno real con auth y certificado propio
-python local-dev/download-schemas.py \
-    --registry-url https://<schema-registry-host> \
-    --subject test-topic-value \
-    --user myuser --password mypass \
-    --insecure
+mvn -f source/pom.xml clean install     # instala la librería en el repo Maven local
+cd demo-app
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Guarda cada esquema en `schemas/<subject>.avsc` (configurable con
-`--out-dir`). Soporta `--user`/`--password` (basic auth) e `--insecure`
-(salta la validación de certificado), igual que las properties
-`library.schema.user`/`pass`/`ignore-ssl` de la librería Java.
+Según `app.kafka.send-sample-message` / `app.kafka.download-schema-only`
+puede listar topics, descargar solo el esquema de un topic, o descargar +
+enviar un mensaje Avro de ejemplo. Ver [demo-app/README.md](demo-app/README.md)
+para el detalle de cada modo y cómo apuntar a `dev`/`integration`/`qa`.
 
 ## Configurar una app consumidora
 
 `GenericRunnerBean.run(keyFile, valueFile, schemaRegistryUrl, topicName,
 restProxyUrl, urlPrefix)` recibe las URLs de Schema Registry y REST Proxy
 como argumentos, no las resuelve de properties. `local-dev/config/`
-contiene dos plantillas listas para copiar al proyecto consumidor:
-
-- `application-local.yml` — apunta al stack de `docker-compose.yml` (`localhost:8081` / `localhost:8082`)
-- `application-dev.yml` — plantilla para un entorno DEV/QA compartido (rellenar hosts y credenciales)
-
-Ambas documentan las properties reales que sí enlaza la librería
-(`library.schema.*`) y las que debe definir la app consumidora para pasar
-a `runner.run(...)`.
+contiene plantillas listas para copiar al proyecto consumidor, una por
+entorno (`local`, `dev`, `integration`, `qa`), documentando las properties
+reales que sí enlaza la librería (`library.schema.*`) y las que debe
+definir la app consumidora para pasar a `runner.run(...)`.
 
 ## CI
 
