@@ -11,6 +11,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.client.ExpectedCount.once;
@@ -89,5 +90,38 @@ class SchemaRegistryClientServiceTest {
 
         assertThrows(SchemaRegistryException.class, () ->
                 client.getLatestSchema(baseUrl, subject, prefix));
+    }
+
+    @Test
+    @DisplayName("✅ Correctly lists the versions of a subject")
+    void testListVersions_success() {
+        String baseUrl = "https://registry.dev/";
+        String subject = "customer-value";
+
+        mockServer.expect(once(), requestTo(baseUrl + subject + "/versions"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("[1, 2, 3]"));
+
+        List<Integer> versions = client.listVersions(baseUrl, subject);
+
+        assertEquals(List.of(1, 2, 3), versions);
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("⚠️ Throws exception if listing versions returns HTTP error")
+    void testListVersions_httpError() {
+        String baseUrl = "https://registry.dev/";
+        String subject = "missing-subject";
+
+        mockServer.expect(once(), requestTo(baseUrl + subject + "/versions"))
+                .andRespond(withStatus(NOT_FOUND));
+
+        SchemaRegistryException ex = assertThrows(SchemaRegistryException.class, () ->
+                client.listVersions(baseUrl, subject));
+
+        assertTrue(ex.getMessage().contains("Schema registry list-versions failed"));
     }
 }

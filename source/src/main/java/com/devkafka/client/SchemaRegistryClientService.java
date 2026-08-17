@@ -19,6 +19,8 @@ import javax.net.ssl.X509TrustManager;
 
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Client for the Schema Registry. Certificate validation is enabled by
@@ -64,6 +66,30 @@ public class SchemaRegistryClientService {
         } catch (Exception e) {
             log.error("Error obtaining schema [" + subject + "]: " + e.getMessage());
             throw new SchemaRegistryException("Schema registry fetch failed", e);
+        }
+    }
+
+    /**
+     * Lists all published version numbers of a subject.
+     *
+     * @param subject Registry subject.
+     * @return version numbers, oldest first.
+     */
+    public List<Integer> listVersions(String schemaRegistry, String subject) {
+        if (ignoreSsl) {
+            disableSSLVerification();
+        }
+
+        String url = schemaRegistry + subject + "/versions";
+        log.info("Listing versions at URL: " + url);
+
+        try {
+            ResponseEntity<Integer[]> response = restTemplate.getForEntity(url, Integer[].class);
+            return Arrays.asList(response.getBody());
+
+        } catch (Exception e) {
+            log.error("Error listing versions [" + subject + "]: " + e.getMessage());
+            throw new SchemaRegistryException("Schema registry list-versions failed", e);
         }
     }
 

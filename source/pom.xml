@@ -30,6 +30,8 @@
     <confluent.version>7.4.0</confluent.version>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
     <commons-io.version>2.15.1</commons-io.version>
+    <cucumber.version>7.18.1</cucumber.version>
+    <junit-platform.version>1.10.2</junit-platform.version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -162,6 +164,28 @@
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
       <version>4.12.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Cucumber: NOT run by mvn test/install by default, see RunCucumberIT -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <version>${cucumber.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <version>${cucumber.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <version>${junit-platform.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

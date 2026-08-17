@@ -24,6 +24,15 @@ public class AvroDummyFiller {
         return genericRecord;
     }
 
+    /**
+     * Like {@link #generateDummyRecord(Schema)} but accepts any schema type,
+     * not just RECORD (e.g. a topic key schema is often a primitive like
+     * "string" rather than a record).
+     */
+    public static Object generateDummyValue(Schema schema) {
+        return generateValue(schema);
+    }
+
     private static Object generateValue(Schema fieldSchema) {
         switch (fieldSchema.getType()) {
             case STRING:

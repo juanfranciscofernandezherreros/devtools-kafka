@@ -27,6 +27,27 @@ src/main/java/com/devkafka/
 
 Los tests replican la misma estructura de paquetes bajo `src/test/java`.
 
+## Tests Cucumber (`com.devkafka.cucumber`)
+
+`RunnerSteps.java` ejercita la librería (`KafkaRestProxyClientService`,
+`SchemaRegistryClientService`, `SchemaDownload`, `GenericRunnerBean`) contra
+un REST Proxy + Schema Registry reales — no reimplementa las llamadas HTTP.
+
+**No se ejecutan** con `mvn test`/`mvn clean install` (el runner se llama
+`RunCucumberIT`, no `*Test`, para que Surefire lo ignore por defecto y no
+rompa el build cuando no hay Kafka levantado). Para correrlos:
+
+```bash
+cd ../local-dev && docker compose up -d && ./register-demo-schemas.sh && cd ../source
+mvn test -Dtest=RunCucumberIT -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+Escenarios en `src/test/resources/features/runner-steps.feature`: listar
+topics + descargar esquema, generar datos dummy desde esquemas y enviarlos,
+enviar un mensaje con `GenericRunnerBean`, y consultar todas las versiones
+de un subject (`SchemaRegistryClientService.listVersions`, nuevo método
+añadido para esta suite).
+
 ## Dependencias externas relevantes
 
 - Spring Framework / Spring Boot AutoConfiguration

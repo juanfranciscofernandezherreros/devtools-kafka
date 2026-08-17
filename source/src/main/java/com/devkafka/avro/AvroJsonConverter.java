@@ -30,11 +30,28 @@ public class AvroJsonConverter {
         if (record == null || schema == null) {
             throw new IllegalArgumentException("Record and schema cannot be null");
         }
+        return toJson((Object) record, schema);
+    }
+
+    /**
+     * Like {@link #toJson(GenericRecord, Schema)} but accepts any Avro
+     * value, not just a record (e.g. the dummy value for a primitive key
+     * schema such as "string").
+     *
+     * @param value the value to convert (record, primitive, etc.)
+     * @param schema the Avro schema corresponding to the value
+     * @return a JSON string with the value's content
+     * @throws IOException if serialization fails
+     */
+    public static String toJson(Object value, Schema schema) throws IOException {
+        if (value == null || schema == null) {
+            throw new IllegalArgumentException("Record and schema cannot be null");
+        }
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            DatumWriter<GenericRecord> writer = new GenericDatumWriter<>(schema);
+            DatumWriter<Object> writer = new GenericDatumWriter<>(schema);
             Encoder encoder = EncoderFactory.get().jsonEncoder(schema, out, true);
-            writer.write(record, encoder);
+            writer.write(value, encoder);
             encoder.flush();
             return out.toString();
         }
