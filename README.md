@@ -15,6 +15,7 @@ proyecto.
 │   └── src/
 ├── local-dev/          Infraestructura Kafka local para desarrollo/pruebas
 │   ├── docker-compose.yml     Zookeeper + Kafka + Schema Registry + REST Proxy
+│   ├── download-schemas.py    Descarga esquemas Avro desde un Schema Registry
 │   └── config/                 Properties de ejemplo para apps consumidoras
 │       ├── application-local.yml
 │       └── application-dev.yml
@@ -76,6 +77,32 @@ Puertos expuestos en el host:
 | Kafka (broker externo) | `9092` |
 | Schema Registry | `8081` |
 | Kafka REST Proxy | `8082` |
+
+## Descargar esquemas Avro
+
+`local-dev/download-schemas.py` descarga esquemas desde un Schema Registry
+(local o real) a ficheros `.avsc` legibles. Solo usa la librería estándar
+de Python, no requiere `pip install`.
+
+```bash
+# todos los subjects registrados
+python local-dev/download-schemas.py --registry-url http://localhost:8081
+
+# solo key+value de un topic concreto
+python local-dev/download-schemas.py --registry-url http://localhost:8081 --topic test-topic
+
+# contra un entorno real con auth y certificado propio
+python local-dev/download-schemas.py \
+    --registry-url https://<schema-registry-host> \
+    --subject test-topic-value \
+    --user myuser --password mypass \
+    --insecure
+```
+
+Guarda cada esquema en `schemas/<subject>.avsc` (configurable con
+`--out-dir`). Soporta `--user`/`--password` (basic auth) e `--insecure`
+(salta la validación de certificado), igual que las properties
+`library.schema.user`/`pass`/`ignore-ssl` de la librería Java.
 
 ## Configurar una app consumidora
 
