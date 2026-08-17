@@ -34,7 +34,16 @@ public class DemoKafkaProperties {
     private boolean downloadSchemaOnly = false;
 
     /**
-     * Directory schemas are saved to when downloadSchemaOnly is true.
+     * Directory schemas are saved to when downloadSchemaOnly is true, and
+     * where the generated/ subfolder goes when autoGenerateSample is true.
      */
     private String schemaOutputDir = "schemas";
+
+    /**
+     * When true (and sendSampleMessage is true), ignores keyPayloadFile /
+     * valuePayloadFile: downloads the key/value schemas for topicName,
+     * generates a random sample matching each schema, and sends that
+     * instead of the static payload files.
+     */
+    private boolean autoGenerateSample = false;
 }
