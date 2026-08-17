@@ -74,34 +74,40 @@ public class KafkaDemoRunner implements CommandLineRunner {
     }
 
     /**
-     * Downloads the key/value schemas for topicName, generates a random
-     * sample matching each one, and writes them to disk so they can be
-     * passed to GenericRunnerBean.run(...) like any other payload file.
+     * Downloads the key/value schemas for topicName (saving each as a
+     * .avsc file), generates a random sample matching each one, and writes
+     * the samples to disk too, so all three artifacts (schema, generated
+     * value, and the send itself) are visible from a single run.
      *
      * @return {keyFile, valueFile}
      */
     private Path[] generateSampleFiles() throws Exception {
         String topicName = properties.getTopicName();
-        Path outputDir = Path.of(properties.getSchemaOutputDir(), "generated");
-        Files.createDirectories(outputDir);
+        Path schemaDir = Path.of(properties.getSchemaOutputDir());
+        Path sampleDir = schemaDir.resolve("generated");
+        Files.createDirectories(schemaDir);
+        Files.createDirectories(sampleDir);
 
-        Path keyFile = generateSampleFile(topicName + "-key", outputDir);
-        Path valueFile = generateSampleFile(topicName + "-value", outputDir);
+        Path keyFile = generateSampleFile(topicName + "-key", schemaDir, sampleDir);
+        Path valueFile = generateSampleFile(topicName + "-value", schemaDir, sampleDir);
 
         return new Path[]{keyFile, valueFile};
     }
 
-    private Path generateSampleFile(String subject, Path outputDir) throws Exception {
+    private Path generateSampleFile(String subject, Path schemaDir, Path sampleDir) throws Exception {
         String schemaJson = schemaRegistryClient.getLatestSchema(schemaRegistryUrl, subject, properties.getSchemaUrlSuffix());
-        Schema schema = new Schema.Parser().parse(schemaJson);
 
+        Path schemaFile = writeSchemaFile(subject, schemaJson, schemaDir);
+        log.info("Downloaded schema for [{}] -> {}", subject, schemaFile.toAbsolutePath());
+
+        Schema schema = new Schema.Parser().parse(schemaJson);
         Object dummyValue = AvroDummyFiller.generateDummyValue(schema);
         String sampleJson = AvroJsonConverter.toJson(dummyValue, schema);
 
-        Path file = outputDir.resolve(subject + "-sample.json");
-        Files.writeString(file, sampleJson);
-        log.info("Generated sample for [{}] -> {}", subject, file.toAbsolutePath());
-        return file;
+        Path sampleFile = sampleDir.resolve(subject + "-sample.json");
+        Files.writeString(sampleFile, sampleJson);
+        log.info("Generated sample for [{}] -> {}", subject, sampleFile.toAbsolutePath());
+        return sampleFile;
     }
 
     private void downloadSchemas() throws Exception {
@@ -111,12 +117,16 @@ public class KafkaDemoRunner implements CommandLineRunner {
 
         for (String suffix : new String[]{"key", "value"}) {
             String subject = topicName + "-" + suffix;
-            String schema = schemaRegistryClient.getLatestSchema(schemaRegistryUrl, subject, properties.getSchemaUrlSuffix());
-
-            Path file = outputDir.resolve(subject + ".avsc");
-            Files.writeString(file, prettyPrint(schema) + System.lineSeparator());
+            String schemaJson = schemaRegistryClient.getLatestSchema(schemaRegistryUrl, subject, properties.getSchemaUrlSuffix());
+            Path file = writeSchemaFile(subject, schemaJson, outputDir);
             log.info("Downloaded schema for [{}] -> {}", subject, file.toAbsolutePath());
         }
+    }
+
+    private Path writeSchemaFile(String subject, String schemaJson, Path dir) throws Exception {
+        Path file = dir.resolve(subject + ".avsc");
+        Files.writeString(file, prettyPrint(schemaJson) + System.lineSeparator());
+        return file;
     }
 
     private static String prettyPrint(String schema) {
