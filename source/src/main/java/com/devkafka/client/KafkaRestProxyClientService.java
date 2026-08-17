@@ -40,7 +40,7 @@ public class KafkaRestProxyClientService {
      */
     public List<String> listTopics(String restProxyUrl) {
         String endpoint = restProxyUrl.endsWith("/topics") ? restProxyUrl : restProxyUrl + "/topics";
-        log.info("🌍 Requesting topic list from: {}", endpoint);
+        log.info("Requesting topic list from: {}", endpoint);
 
         HttpClient client;
         HttpRequest request;
@@ -58,7 +58,7 @@ public class KafkaRestProxyClientService {
                     .GET()
                     .build();
         } catch (Exception e) {
-            log.error("❌ Error configuring HttpClient/SSL: {}", e.getMessage());
+            log.error("Error configuring HttpClient/SSL: {}", e.getMessage());
             throw new KafkaRestProxyException("Error configuring HttpClient", e);
         }
 
@@ -67,17 +67,17 @@ public class KafkaRestProxyClientService {
             int status = response.statusCode();
 
             if (status != 200) {
-                log.error("⚠️ HTTP error {} when obtaining topics: {}", status, response.body());
+                log.error("HTTP error {} when obtaining topics: {}", status, response.body());
                 throw new KafkaRestProxyException("HTTP error " + status + ": " + response.body());
             }
 
             String body = response.body();
-            log.info("✅ Topics JSON received: {}", body);
+            log.info("Topics JSON received: {}", body);
 
             return Arrays.asList(mapper.readValue(body, String[].class));
 
         } catch (IOException | InterruptedException e) {
-            log.error("❌ Error obtaining topic list: {}", e.getMessage(), e);
+            log.error("Error obtaining topic list: {}", e.getMessage(), e);
             throw new KafkaRestProxyException("Error obtaining topic list", e);
         }
     }
@@ -98,7 +98,7 @@ public class KafkaRestProxyClientService {
 
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(null, trustAllCerts, new SecureRandom());
-        log.info("🔐 SSLContext without certificate validation (DEV/QA only)");
+        log.info("SSLContext without certificate validation (DEV/QA only)");
         return ctx;
     }
 }

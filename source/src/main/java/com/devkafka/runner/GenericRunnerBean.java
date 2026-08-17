@@ -15,6 +15,6 @@ public class GenericRunnerBean {
     public void run(String keyPayloadFile, String valuePayloadFile, String schemaRegistry, String topicName, String confluentic, String urlPrefix) throws ErrorMessageException {
         long start = System.currentTimeMillis();
         schemaDownload.exportAndSendAvroMessages(keyPayloadFile, valuePayloadFile, schemaRegistry, topicName, confluentic, urlPrefix);
-        log.info("✅ Message sent. Time: " + (System.currentTimeMillis() - start) + " ms");
+        log.info("Message sent. Time: " + (System.currentTimeMillis() - start) + " ms");
     }
 }

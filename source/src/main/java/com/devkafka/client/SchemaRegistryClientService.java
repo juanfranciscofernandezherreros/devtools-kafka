@@ -51,18 +51,18 @@ public class SchemaRegistryClientService {
         }
 
         String url = schemaRegistry + subject + urlPrefix;
-        log.info("🌍 Searching for schema at URL: " + url);
+        log.info("Searching for schema at URL: " + url);
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             JsonNode root = objectMapper.readTree(response.getBody());
 
             String schema = root.get("schema").asText();
-            log.info("✅ Schema obtained for [" + subject + "]");
+            log.info("Schema obtained for [" + subject + "]");
             return schema;
 
         } catch (Exception e) {
-            log.error("❌ Error obtaining schema [" + subject + "]: " + e.getMessage());
+            log.error("Error obtaining schema [" + subject + "]: " + e.getMessage());
             throw new SchemaRegistryException("Schema registry fetch failed", e);
         }
     }
@@ -91,9 +91,9 @@ public class SchemaRegistryClientService {
             HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
             HttpsURLConnection.setDefaultHostnameVerifier((h, s) -> true);
 
-            log.info("⚠️  SSL verification disabled (TEST)");
+            log.info("SSL verification disabled (TEST)");
         } catch (Exception e) {
-            log.error("❌ Error disabling SSL verification: " + e.getMessage());
+            log.error("Error disabling SSL verification: " + e.getMessage());
         }
     }
 }

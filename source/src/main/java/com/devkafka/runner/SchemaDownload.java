@@ -42,13 +42,13 @@ public class SchemaDownload {
 
     public void exportAndSendAvroMessages(String keyPayloadFile, String valuePayloadFile, String schemaRegistry, String topicName, String restProxyUrl, String urlPrefix)
             throws ErrorMessageException {
-        log.info("✅ DevUK109TargetComponent loaded. Ready to execute Avro message sending API.");
-        log.info("📁 File key: {}", keyPayloadFile);
-        log.info("📁 File value: {}", valuePayloadFile);
-        log.info("📁 Schema Registry: {}", schemaRegistry);
-        log.info("📝 Topic name  : {}", topicName);
-        log.info("📝 REST Proxy  : {}", restProxyUrl);
-        log.info("📝 URL Prefix  : {}", urlPrefix);
+        log.info("DevUK109TargetComponent loaded. Ready to execute Avro message sending API.");
+        log.info("File key: {}", keyPayloadFile);
+        log.info("File value: {}", valuePayloadFile);
+        log.info("Schema Registry: {}", schemaRegistry);
+        log.info("Topic name  : {}", topicName);
+        log.info("REST Proxy  : {}", restProxyUrl);
+        log.info("URL Prefix  : {}", urlPrefix);
 
         sendAvroMessageWithSchema(keyPayloadFile, valuePayloadFile, schemaRegistry, topicName, restProxyUrl, urlPrefix);
     }
@@ -61,10 +61,10 @@ public class SchemaDownload {
         JsonNode valuePayload = readJsonFile(valueFilePath, "VALUE");
 
         String keySchema = schemaRegistryDownloader.getLatestSchema(schemaRegistry, topicName + "-key", urlPrefix);
-        log.info("✅ KEY Schema downloaded:\n{}", keySchema);
+        log.info("KEY Schema downloaded:\n{}", keySchema);
 
         String valueSchema = schemaRegistryDownloader.getLatestSchema(schemaRegistry, topicName + "-value", urlPrefix);
-        log.info("✅ VALUE Schema downloaded:\n{}", valueSchema);
+        log.info("VALUE Schema downloaded:\n{}", valueSchema);
 
         ObjectNode payload = mapper.createObjectNode();
         payload.put("key_schema", keySchema);
@@ -80,7 +80,7 @@ public class SchemaDownload {
 
         try {
             String jsonPayload = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
-            log.info("📨 Payload sent to REST Proxy:\n{}", jsonPayload);
+            log.info("Payload sent to REST Proxy:\n{}", jsonPayload);
 
             HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
             if (ignoreSsl) {
@@ -95,33 +95,33 @@ public class SchemaDownload {
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
                     .build();
 
-            log.info("🚀 Sending to REST Proxy: {}", fullRestProxyUrl);
+            log.info("Sending to REST Proxy: {}", fullRestProxyUrl);
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                log.info("✅ Message sent successfully");
-                log.info("↩️ Response ({}): {}", response.statusCode(), response.body());
+                log.info("Message sent successfully");
+                log.info("Response ({}): {}", response.statusCode(), response.body());
             } else {
-                log.error("⚠️ Error sending message. Code {}", response.statusCode());
-                log.error("⚠️ Response: {}", response.body());
+                log.error("Error sending message. Code {}", response.statusCode());
+                log.error("Response: {}", response.body());
                 throw new ErrorMessageException("REST Proxy error: " + response.statusCode());
             }
         } catch (IOException | InterruptedException e) {
-            log.error("❌ Error sending message", e);
+            log.error("Error sending message", e);
             throw new ErrorMessageException("Error sending REST Proxy request: " + e.getMessage());
         } catch (Exception e) {
-            log.error("❌ Unexpected error", e);
+            log.error("Unexpected error", e);
             throw new ErrorMessageException("Unexpected error: " + e.getMessage());
         }
     }
 
     private JsonNode readJsonFile(String filePath, String type) throws ErrorMessageException {
-        log.info("⏱️ Loading {} from: {}", type, filePath);
+        log.info("Loading {} from: {}", type, filePath);
         try {
             return mapper.readTree(new File(filePath));
         } catch (IOException e) {
-            log.error("❌ Error loading {} payload", type, e);
+            log.error("Error loading {} payload", type, e);
             throw new ErrorMessageException("Error loading " + type + " payload: " + e.getMessage());
         }
     }
@@ -145,7 +145,7 @@ public class SchemaDownload {
         };
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(null, trustAllCerts, new SecureRandom());
-        log.info("🔐 SSLContext without certificate validation (TEST)");
+        log.info("SSLContext without certificate validation (TEST)");
         return ctx;
     }
 }
