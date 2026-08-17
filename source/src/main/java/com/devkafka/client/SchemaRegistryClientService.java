@@ -70,6 +70,30 @@ public class SchemaRegistryClientService {
     }
 
     /**
+     * Lists every subject registered in the Schema Registry.
+     *
+     * @param schemaRegistry base registry URL (e.g. http://localhost:8081/subjects/)
+     * @return subject names.
+     */
+    public List<String> listSubjects(String schemaRegistry) {
+        if (ignoreSsl) {
+            disableSSLVerification();
+        }
+
+        String url = schemaRegistry.endsWith("/") ? schemaRegistry.substring(0, schemaRegistry.length() - 1) : schemaRegistry;
+        log.info("Listing subjects at URL: " + url);
+
+        try {
+            ResponseEntity<String[]> response = restTemplate.getForEntity(url, String[].class);
+            return Arrays.asList(response.getBody());
+
+        } catch (Exception e) {
+            log.error("Error listing subjects: " + e.getMessage());
+            throw new SchemaRegistryException("Schema registry list-subjects failed", e);
+        }
+    }
+
+    /**
      * Lists all published version numbers of a subject.
      *
      * @param subject Registry subject.

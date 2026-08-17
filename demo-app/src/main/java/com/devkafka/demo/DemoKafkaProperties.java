@@ -34,6 +34,13 @@ public class DemoKafkaProperties {
     private boolean downloadSchemaOnly = false;
 
     /**
+     * When true (and downloadSchemaOnly is true), ignores topicName and
+     * downloads every subject registered in the Schema Registry instead of
+     * just topicName-key/topicName-value.
+     */
+    private boolean downloadAllSchemas = false;
+
+    /**
      * Directory schemas are saved to when downloadSchemaOnly is true, and
      * where the generated/ subfolder goes when autoGenerateSample is true.
      */

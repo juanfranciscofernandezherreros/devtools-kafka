@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -111,12 +112,19 @@ public class KafkaDemoRunner implements CommandLineRunner {
     }
 
     private void downloadSchemas() throws Exception {
-        String topicName = properties.getTopicName();
         Path outputDir = Path.of(properties.getSchemaOutputDir());
         Files.createDirectories(outputDir);
 
-        for (String suffix : new String[]{"key", "value"}) {
-            String subject = topicName + "-" + suffix;
+        List<String> subjects;
+        if (properties.isDownloadAllSchemas()) {
+            subjects = schemaRegistryClient.listSubjects(schemaRegistryUrl);
+            log.info("Found {} subjects in the Schema Registry", subjects.size());
+        } else {
+            String topicName = properties.getTopicName();
+            subjects = List.of(topicName + "-key", topicName + "-value");
+        }
+
+        for (String subject : subjects) {
             String schemaJson = schemaRegistryClient.getLatestSchema(schemaRegistryUrl, subject, properties.getSchemaUrlSuffix());
             Path file = writeSchemaFile(subject, schemaJson, outputDir);
             log.info("Downloaded schema for [{}] -> {}", subject, file.toAbsolutePath());

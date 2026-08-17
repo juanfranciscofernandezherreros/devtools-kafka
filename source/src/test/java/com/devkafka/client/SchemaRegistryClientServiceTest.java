@@ -124,4 +124,35 @@ class SchemaRegistryClientServiceTest {
 
         assertTrue(ex.getMessage().contains("Schema registry list-versions failed"));
     }
+
+    @Test
+    @DisplayName("✅ Correctly lists every subject in the registry")
+    void testListSubjects_success() {
+        String baseUrl = "https://registry.dev/";
+
+        mockServer.expect(once(), requestTo("https://registry.dev"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(OK)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("[\"topic1-key\", \"topic1-value\", \"topic2-value\"]"));
+
+        List<String> subjects = client.listSubjects(baseUrl);
+
+        assertEquals(List.of("topic1-key", "topic1-value", "topic2-value"), subjects);
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("⚠️ Throws exception if listing subjects returns HTTP error")
+    void testListSubjects_httpError() {
+        String baseUrl = "https://registry.dev/";
+
+        mockServer.expect(once(), requestTo("https://registry.dev"))
+                .andRespond(withStatus(INTERNAL_SERVER_ERROR));
+
+        SchemaRegistryException ex = assertThrows(SchemaRegistryException.class, () ->
+                client.listSubjects(baseUrl));
+
+        assertTrue(ex.getMessage().contains("Schema registry list-subjects failed"));
+    }
 }

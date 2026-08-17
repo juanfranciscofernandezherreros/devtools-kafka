@@ -31,12 +31,13 @@ con las URLs reales antes de que funcionen contra esos entornos.
 `KafkaDemoRunner` siempre lista los topics del REST Proxy al arrancar.
 Además, según las properties activas:
 
-| `send-sample-message` | `auto-generate-sample` | `download-schema-only` | Qué hace |
-|---|---|---|---|
-| `true` | `false` | (ignorado) | Descarga el esquema key+value y envía los ficheros estáticos `key-payload-file`/`value-payload-file` (por defecto `samples/key.json`/`value.json`) |
-| `true` | `true` | (ignorado) | Descarga el esquema key+value, **genera un valor aleatorio que cumple ese esquema** (`AvroDummyFiller`) y lo envía — sin necesitar ficheros de ejemplo fijos |
-| `false` | — | `true` | Solo descarga el esquema key+value de `topic-name` a `schema-output-dir` (por defecto `schemas/`), sin enviar nada |
-| `false` | — | `false` | Solo lista los topics |
+| `send-sample-message` | `auto-generate-sample` | `download-schema-only` | `download-all-schemas` | Qué hace |
+|---|---|---|---|---|
+| `true` | `false` | (ignorado) | (ignorado) | Descarga el esquema key+value y envía los ficheros estáticos `key-payload-file`/`value-payload-file` (por defecto `samples/key.json`/`value.json`) |
+| `true` | `true` | (ignorado) | (ignorado) | Descarga el esquema key+value, **genera un valor aleatorio que cumple ese esquema** (`AvroDummyFiller`) y lo envía — sin necesitar ficheros de ejemplo fijos |
+| `false` | — | `true` | `false` | Solo descarga el esquema key+value de `topic-name` a `schema-output-dir` (por defecto `schemas/`), sin enviar nada |
+| `false` | — | `true` | `true` | Ignora `topic-name`: lista **todos** los subjects del Schema Registry (`SchemaRegistryClientService.listSubjects`) y descarga cada uno |
+| `false` | — | `false` | — | Solo lista los topics |
 
 Útil cuando tienes la URL del Schema Registry pero `topic-name` (`test-topic`
 por defecto) no existe como subject real en ese entorno — solo listar
@@ -48,6 +49,13 @@ Ejemplo para descargar solo el esquema de un topic real en `dev`:
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=dev \
   "-Dspring-boot.run.arguments=--app.kafka.topic-name=mi-topic-real --app.kafka.send-sample-message=false --app.kafka.download-schema-only=true"
+```
+
+Ejemplo para descargar **todos** los esquemas registrados en `dev` de golpe:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev \
+  "-Dspring-boot.run.arguments=--app.kafka.send-sample-message=false --app.kafka.download-schema-only=true --app.kafka.download-all-schemas=true"
 ```
 
 Ejemplo para generar y enviar un mensaje automático (sin ficheros fijos) a
