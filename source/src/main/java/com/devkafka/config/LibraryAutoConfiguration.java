@@ -31,8 +31,8 @@ public class LibraryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "library.schema", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public SchemaRegistryClientService schemaRegistryClientService() {
-        return new SchemaRegistryClientService();
+    public SchemaRegistryClientService schemaRegistryClientService(SchemaRegistryProperties properties) {
+        return new SchemaRegistryClientService(properties);
     }
 
     /**
@@ -41,8 +41,8 @@ public class LibraryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "library.schema", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public SchemaDownload schemaDownload(SchemaRegistryClientService schemaRegistryClientService) {
-        return new SchemaDownload(schemaRegistryClientService);
+    public SchemaDownload schemaDownload(SchemaRegistryClientService schemaRegistryClientService, SchemaRegistryProperties properties) {
+        return new SchemaDownload(schemaRegistryClientService, properties);
     }
 
     /**
@@ -61,7 +61,7 @@ public class LibraryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "library.restproxy", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public KafkaRestProxyClientService kafkaRestProxyClientService() {
-        return new KafkaRestProxyClientService();
+    public KafkaRestProxyClientService kafkaRestProxyClientService(SchemaRegistryProperties properties) {
+        return new KafkaRestProxyClientService(properties);
     }
 }

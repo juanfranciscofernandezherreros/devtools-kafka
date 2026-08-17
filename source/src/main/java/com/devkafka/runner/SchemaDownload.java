@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.devkafka.client.SchemaRegistryClientService;
+import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.ErrorMessageException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +33,11 @@ public class SchemaDownload {
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private final SchemaRegistryClientService schemaRegistryDownloader;
+    private final boolean ignoreSsl;
 
-    public SchemaDownload(SchemaRegistryClientService schemaRegistryDownloader) {
+    public SchemaDownload(SchemaRegistryClientService schemaRegistryDownloader, SchemaRegistryProperties properties) {
         this.schemaRegistryDownloader = schemaRegistryDownloader;
+        this.ignoreSsl = properties.isIgnoreSsl();
     }
 
     public void exportAndSendAvroMessages(String keyPayloadFile, String valuePayloadFile, String schemaRegistry, String topicName, String restProxyUrl, String urlPrefix)
@@ -79,9 +82,11 @@ public class SchemaDownload {
             String jsonPayload = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
             log.info("📨 Payload sent to REST Proxy:\n{}", jsonPayload);
 
-            HttpClient httpClient = HttpClient.newBuilder()
-                    .sslContext(createInsecureSslContext()) // SOLO PARA PRUEBAS
-                    .build();
+            HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+            if (ignoreSsl) {
+                httpClientBuilder.sslContext(createInsecureSslContext());
+            }
+            HttpClient httpClient = httpClientBuilder.build();
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(fullRestProxyUrl))

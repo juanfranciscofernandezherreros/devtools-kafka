@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.devkafka.client.SchemaRegistryClientService;
+import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.ErrorMessageException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -36,7 +37,7 @@ class SchemaDownloadTest {
 
         // Mock of the Schema Registry service
         mockRegistry = Mockito.mock(SchemaRegistryClientService.class);
-        schemaDownload = new SchemaDownload(mockRegistry);
+        schemaDownload = new SchemaDownload(mockRegistry, new SchemaRegistryProperties());
 
         // Temporary payload files
         keyFile = File.createTempFile("key", ".json");

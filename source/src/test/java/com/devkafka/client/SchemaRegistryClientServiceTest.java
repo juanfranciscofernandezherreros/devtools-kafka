@@ -1,5 +1,6 @@
 package com.devkafka.client;
 
+import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.SchemaRegistryException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +25,7 @@ class SchemaRegistryClientServiceTest {
 
     @BeforeEach
     void setup() throws Exception {
-        client = new SchemaRegistryClientService();
+        client = new SchemaRegistryClientService(new SchemaRegistryProperties());
 
         // Access the internal RestTemplate via reflection
         Field restTemplateField = SchemaRegistryClientService.class.getDeclaredField("restTemplate");

@@ -1,5 +1,6 @@
 package com.devkafka.client;
 
+import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.KafkaRestProxyException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -28,7 +29,7 @@ class KafkaRestProxyClientServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new KafkaRestProxyClientService();
+        service = new KafkaRestProxyClientService(new SchemaRegistryProperties());
     }
 
     @Test

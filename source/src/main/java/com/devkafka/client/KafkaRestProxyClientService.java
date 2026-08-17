@@ -1,6 +1,7 @@
 package com.devkafka.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.KafkaRestProxyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,15 +19,24 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Client for the Kafka REST Proxy. Certificate validation is enabled by
+ * default; it's only skipped when {@code library.schema.ignore-ssl=true}
+ * (local/dev environments with self-signed certs).
+ */
 @Service
 @Slf4j
 public class KafkaRestProxyClientService {
 
     private final ObjectMapper mapper = new ObjectMapper();
+    private final boolean ignoreSsl;
+
+    public KafkaRestProxyClientService(SchemaRegistryProperties properties) {
+        this.ignoreSsl = properties.isIgnoreSsl();
+    }
 
     /**
      * Lists all available topics from the REST Proxy.
-     * Ignores SSL (QA/DEV only).
      */
     public List<String> listTopics(String restProxyUrl) {
         String endpoint = restProxyUrl.endsWith("/topics") ? restProxyUrl : restProxyUrl + "/topics";
@@ -36,9 +46,11 @@ public class KafkaRestProxyClientService {
         HttpRequest request;
 
         try {
-            client = HttpClient.newBuilder()
-                    .sslContext(createInsecureSslContext()) // 🔐 igual que en SchemaDownload
-                    .build();
+            HttpClient.Builder clientBuilder = HttpClient.newBuilder();
+            if (ignoreSsl) {
+                clientBuilder.sslContext(createInsecureSslContext());
+            }
+            client = clientBuilder.build();
 
             request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))

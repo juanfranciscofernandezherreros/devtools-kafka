@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 class LibraryAutoConfigurationTest {
 
     private LibraryAutoConfiguration config;
+    private SchemaRegistryProperties properties;
 
     @Mock
     private RestTemplateBuilder restTemplateBuilder;
@@ -39,6 +40,7 @@ class LibraryAutoConfigurationTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
         config = new LibraryAutoConfiguration();
+        properties = new SchemaRegistryProperties();
         when(restTemplateBuilder.build()).thenReturn(restTemplate);
     }
 
@@ -53,7 +55,7 @@ class LibraryAutoConfigurationTest {
     @Test
     @DisplayName("✅ Creates a SchemaRegistryClientService correctly")
     void testSchemaRegistryClientService() {
-        SchemaRegistryClientService service = config.schemaRegistryClientService();
+        SchemaRegistryClientService service = config.schemaRegistryClientService(properties);
         assertNotNull(service);
         assertTrue(service instanceof SchemaRegistryClientService);
     }
@@ -61,7 +63,7 @@ class LibraryAutoConfigurationTest {
     @Test
     @DisplayName("✅ Creates a SchemaDownload injecting the mocked SchemaRegistryClientService")
     void testSchemaDownload() {
-        SchemaDownload download = config.schemaDownload(mockSchemaRegistryClientService);
+        SchemaDownload download = config.schemaDownload(mockSchemaRegistryClientService, properties);
         assertNotNull(download);
         assertTrue(download instanceof SchemaDownload);
     }
@@ -77,7 +79,7 @@ class LibraryAutoConfigurationTest {
     @Test
     @DisplayName("✅ Creates a KafkaRestProxyClientService correctly")
     void testKafkaRestProxyClientService() {
-        KafkaRestProxyClientService client = config.kafkaRestProxyClientService();
+        KafkaRestProxyClientService client = config.kafkaRestProxyClientService(properties);
         assertNotNull(client);
         assertTrue(client instanceof KafkaRestProxyClientService);
     }

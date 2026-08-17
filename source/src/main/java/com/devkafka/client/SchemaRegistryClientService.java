@@ -3,6 +3,7 @@ package com.devkafka.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.SchemaRegistryException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,9 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 /**
- * Client for the Schema Registry that ignores SSL (QA/DEV only).
+ * Client for the Schema Registry. Certificate validation is enabled by
+ * default; it's only skipped when {@code library.schema.ignore-ssl=true}
+ * (local/dev environments with self-signed certs).
  */
 @Service
 @Slf4j
@@ -28,10 +31,12 @@ public class SchemaRegistryClientService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final boolean ignoreSsl;
 
-    public SchemaRegistryClientService() {
+    public SchemaRegistryClientService(SchemaRegistryProperties properties) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
+        this.ignoreSsl = properties.isIgnoreSsl();
     }
 
     /**
@@ -41,7 +46,9 @@ public class SchemaRegistryClientService {
      * @return Schema as a String (JSON raw).
      */
     public String getLatestSchema(String schemaRegistry, String subject, String urlPrefix) {
-        disableSSLVerification();  // Avoid certificate issues
+        if (ignoreSsl) {
+            disableSSLVerification();
+        }
 
         String url = schemaRegistry + subject + urlPrefix;
         log.info("🌍 Searching for schema at URL: " + url);
