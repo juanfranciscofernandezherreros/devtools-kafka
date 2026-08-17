@@ -63,6 +63,7 @@ public class KafkaDemoRunner implements CommandLineRunner {
                     properties.getRestProxyUrl(),
                     properties.getSchemaUrlSuffix()
             );
+            downloadSentMessage();
             return;
         }
 
@@ -111,6 +112,23 @@ public class KafkaDemoRunner implements CommandLineRunner {
         return sampleFile;
     }
 
+    /**
+     * Reads back the message just produced (via a throwaway REST Proxy
+     * consumer group) and saves it next to the other generated artifacts,
+     * so the send can be verified without a separate consumer tool.
+     */
+    private void downloadSentMessage() throws Exception {
+        String topicName = properties.getTopicName();
+        String records = restProxyClient.consumeLatestMessages(properties.getRestProxyUrl(), topicName);
+        String lastRecord = lastRecord(records);
+
+        Path outDir = Path.of(properties.getSchemaOutputDir()).resolve("received");
+        Files.createDirectories(outDir);
+        Path file = outDir.resolve(topicName + "-received.json");
+        Files.writeString(file, prettyPrint(lastRecord) + System.lineSeparator());
+        log.info("Downloaded sent message(s) for [{}] -> {}", topicName, file.toAbsolutePath());
+    }
+
     private void downloadSchemas() throws Exception {
         Path outputDir = Path.of(properties.getSchemaOutputDir());
         Files.createDirectories(outputDir);
@@ -135,6 +153,14 @@ public class KafkaDemoRunner implements CommandLineRunner {
         Path file = dir.resolve(subject + ".avsc");
         Files.writeString(file, prettyPrint(schemaJson) + System.lineSeparator());
         return file;
+    }
+
+    private static String lastRecord(String recordsJsonArray) throws Exception {
+        JsonNode records = MAPPER.readTree(recordsJsonArray);
+        if (!records.isArray() || records.isEmpty()) {
+            return recordsJsonArray;
+        }
+        return records.get(records.size() - 1).toString();
     }
 
     private static String prettyPrint(String schema) {
