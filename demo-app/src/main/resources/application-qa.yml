@@ -1,0 +1,20 @@
+# Fill in the real QA host names/credentials before use.
+library:
+  schema:
+    enabled: true
+    registry-url: https://<schema-registry-qa-host>/subjects/
+    ignore-ssl: false
+    user: ${SCHEMA_REGISTRY_USER}
+    pass: ${SCHEMA_REGISTRY_PASS}
+  runner:
+    enabled: true
+  restproxy:
+    enabled: true
+
+app:
+  kafka:
+    rest-proxy-url: https://<kafka-rest-proxy-qa-host>/topics
+    schema-url-suffix: /versions/latest
+    topic-name: test-topic
+    key-payload-file: samples/key.json
+    value-payload-file: samples/value.json

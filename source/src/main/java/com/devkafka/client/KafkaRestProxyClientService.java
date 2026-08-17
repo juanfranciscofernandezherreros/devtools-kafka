@@ -42,7 +42,7 @@ public class KafkaRestProxyClientService {
 
             request = HttpRequest.newBuilder()
                     .uri(URI.create(endpoint))
-                    .header("Accept", "application/json")
+                    .header("Accept", "application/vnd.kafka.v2+json, application/vnd.kafka+json, application/json")
                     .GET()
                     .build();
         } catch (Exception e) {

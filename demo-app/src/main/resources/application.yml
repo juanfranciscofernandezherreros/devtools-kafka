@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: devkafka-demo-app
+
+logging:
+  level:
+    com.devkafka: INFO

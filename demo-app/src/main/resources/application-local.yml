@@ -1,0 +1,20 @@
+# Runs against local-dev/docker-compose.yml. Before starting, register the
+# demo schemas once (see demo-app/README.md):
+#   local-dev/register-demo-schemas.sh
+library:
+  schema:
+    enabled: true
+    registry-url: http://localhost:8081/subjects/
+    ignore-ssl: true
+  runner:
+    enabled: true
+  restproxy:
+    enabled: true
+
+app:
+  kafka:
+    rest-proxy-url: http://localhost:8082/topics
+    schema-url-suffix: /versions/latest
+    topic-name: test-topic
+    key-payload-file: samples/key.json
+    value-payload-file: samples/value.json
