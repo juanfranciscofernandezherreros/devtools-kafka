@@ -134,12 +134,13 @@ class SchemaDownloadTest {
     @Test
     @DisplayName("🚫 Throws ErrorMessageException if the JSON file cannot be read")
     void testExportAndSendAvroMessages_fileError() {
-        File missing = new File("nonexistent.json");
+        // Path is never created on disk: exercises the file-not-found branch on purpose.
+        File missingPayloadFile = new File("does-not-exist-on-purpose.json");
 
         assertThrows(ErrorMessageException.class, () -> {
             schemaDownload.exportAndSendAvroMessages(
-                    missing.getAbsolutePath(),
-                    missing.getAbsolutePath(),
+                    missingPayloadFile.getAbsolutePath(),
+                    missingPayloadFile.getAbsolutePath(),
                     "http://schema-registry.dev",
                     "test-topic",
                     "http://localhost",
