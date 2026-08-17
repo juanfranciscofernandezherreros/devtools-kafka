@@ -1,4 +1,4 @@
-image: maven:3.8.3-openjdk-17
+image: maven:3.9-eclipse-temurin-21
 
 include:
 - project: $PIPELINE_TEMPLATES_REPO_PATH
@@ -9,4 +9,4 @@ variables:
   SERVICE_LOCATION: ''
   IMAGE_LOCATION: backend
   HELM_CHART_VALUES_LOCATION: rft-devtools
-  JAVA_VERSION: 17
+  JAVA_VERSION: 21
