@@ -3,6 +3,8 @@ package com.devkafka.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.devkafka.exception.SchemaRegistryException;
+
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
@@ -54,7 +56,7 @@ public class SchemaRegistryClientService {
 
         } catch (Exception e) {
             log.error("❌ Error obtaining schema [" + subject + "]: " + e.getMessage());
-            throw new RuntimeException("Schema registry fetch failed", e);
+            throw new SchemaRegistryException("Schema registry fetch failed", e);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.devkafka.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.devkafka.exception.KafkaRestProxyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -46,7 +47,7 @@ public class KafkaRestProxyClientService {
                     .build();
         } catch (Exception e) {
             log.error("❌ Error configuring HttpClient/SSL: {}", e.getMessage());
-            throw new RuntimeException("Error configuring HttpClient", e);
+            throw new KafkaRestProxyException("Error configuring HttpClient", e);
         }
 
         try {
@@ -55,7 +56,7 @@ public class KafkaRestProxyClientService {
 
             if (status != 200) {
                 log.error("⚠️ HTTP error {} when obtaining topics: {}", status, response.body());
-                throw new RuntimeException("HTTP error " + status + ": " + response.body());
+                throw new KafkaRestProxyException("HTTP error " + status + ": " + response.body());
             }
 
             String body = response.body();
@@ -65,7 +66,7 @@ public class KafkaRestProxyClientService {
 
         } catch (IOException | InterruptedException e) {
             log.error("❌ Error obtaining topic list: {}", e.getMessage(), e);
-            throw new RuntimeException("Error obtaining topic list", e);
+            throw new KafkaRestProxyException("Error obtaining topic list", e);
         }
     }
 

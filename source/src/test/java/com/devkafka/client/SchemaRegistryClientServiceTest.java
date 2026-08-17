@@ -1,5 +1,6 @@
 package com.devkafka.client;
 
+import com.devkafka.exception.SchemaRegistryException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,7 @@ class SchemaRegistryClientServiceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"error\": \"Internal error\"}"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        SchemaRegistryException ex = assertThrows(SchemaRegistryException.class, () ->
                 client.getLatestSchema(baseUrl, subject, prefix));
 
         assertTrue(ex.getMessage().contains("Schema registry fetch failed"));
@@ -85,7 +86,7 @@ class SchemaRegistryClientServiceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"other\":\"field\"}"));
 
-        assertThrows(RuntimeException.class, () ->
+        assertThrows(SchemaRegistryException.class, () ->
                 client.getLatestSchema(baseUrl, subject, prefix));
     }
 }

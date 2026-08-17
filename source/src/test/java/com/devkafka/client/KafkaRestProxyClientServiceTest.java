@@ -1,5 +1,6 @@
 package com.devkafka.client;
 
+import com.devkafka.exception.KafkaRestProxyException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.*;
@@ -62,7 +63,7 @@ class KafkaRestProxyClientServiceTest {
 
         String baseUrl = mockWebServer.url("/topics").toString();
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        KafkaRestProxyException ex = assertThrows(KafkaRestProxyException.class, () ->
                 service.listTopics(baseUrl));
 
         assertTrue(ex.getMessage().contains("HTTP error 404:"));
