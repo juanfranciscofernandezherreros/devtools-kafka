@@ -6,20 +6,27 @@ librería en sí. Al arrancar: lista los topics del REST Proxy, descarga el
 esquema Avro de `test-topic` y envía un mensaje de ejemplo
 (`samples/key.json` + `samples/value.json`).
 
+Todos los comandos de este README se ejecutan **desde la raíz del
+repositorio** (no desde `demo-app/`), usando `mvn -f demo-app/pom.xml` —
+así no hace falta `cd` a ningún subproyecto.
+
 ## Arrancar contra el stack local
 
-```bash
-mvn -f ../source/pom.xml clean install && cd ../local-dev && docker compose up -d && ./register-demo-schemas.sh && cd ../demo-app && mvn spring-boot:run -Dspring-boot.run.profiles=local
+```powershell
+mvn -f source/pom.xml clean install
+docker compose -f local-dev/docker-compose.yml up -d
+powershell -File local-dev/register-demo-schemas.ps1
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
 ## Arrancar contra dev / integration / qa
 
 Mismo comando cambiando el perfil:
 
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-mvn spring-boot:run -Dspring-boot.run.profiles=integration
-mvn spring-boot:run -Dspring-boot.run.profiles=qa
+```powershell
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=dev"
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=integration"
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=qa"
 ```
 
 Estos tres perfiles (`src/main/resources/application-{dev,integration,qa}.yml`)
@@ -46,32 +53,43 @@ haría.
 
 Ejemplo para descargar solo el esquema de un topic real en `dev`:
 
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev \
+```powershell
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=dev" `
   "-Dspring-boot.run.arguments=--app.kafka.topic-name=mi-topic-real --app.kafka.send-sample-message=false --app.kafka.download-schema-only=true"
 ```
 
 Ejemplo para descargar **todos** los esquemas registrados en `dev` de golpe:
 
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev \
+```powershell
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=dev" `
   "-Dspring-boot.run.arguments=--app.kafka.send-sample-message=false --app.kafka.download-schema-only=true --app.kafka.download-all-schemas=true"
 ```
 
 Ejemplo para generar y enviar un mensaje automático (sin ficheros fijos) a
 un topic real en `dev`, una vez confirmado que existe como subject:
 
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev \
+```powershell
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=dev" `
   "-Dspring-boot.run.arguments=--app.kafka.topic-name=mi-topic-real --app.kafka.auto-generate-sample=true"
 ```
 
 (`-Dspring-boot.run.arguments=...` pasa argumentos al programa — a
 diferencia de `-D<prop>=<valor>` suelto, que Maven **no** reenvía al
-proceso hijo de `spring-boot:run`.)
+proceso hijo de `spring-boot:run`. En PowerShell, el backtick `` ` `` al
+final de línea continúa el comando en la siguiente; no dejes espacios
+después de él.)
 
 ## Jar ejecutable
 
-```bash
-mvn clean package && java -jar target/devkafka-demo-app-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+A diferencia de `spring-boot:run` (que fija el directorio de trabajo en
+`demo-app/` automáticamente), `java -jar` usa el directorio desde el que lo
+lances — así que las rutas de los payloads hay que darlas relativas a la
+raíz del repo:
+
+```powershell
+mvn -f demo-app/pom.xml clean package
+java -jar demo-app/target/devkafka-demo-app-0.1.0-SNAPSHOT.jar `
+  --spring.profiles.active=local `
+  --app.kafka.key-payload-file=demo-app/samples/key.json `
+  --app.kafka.value-payload-file=demo-app/samples/value.json
 ```

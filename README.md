@@ -19,7 +19,7 @@ proyecto.
 │   └── src/main/resources/      application-{local,dev,integration,qa}.yml
 ├── local-dev/           Infraestructura Kafka local para desarrollo/pruebas
 │   ├── docker-compose.yml       Zookeeper + Kafka + Schema Registry + REST Proxy
-│   ├── register-demo-schemas.sh Registra los esquemas de ejemplo en el Schema Registry local
+│   ├── register-demo-schemas.ps1/.sh  Registra los esquemas de ejemplo en el Schema Registry local
 │   └── config/                   Properties de ejemplo para apps consumidoras
 │       ├── application-local.yml
 │       ├── application-dev.yml
@@ -56,10 +56,12 @@ propios, no para producción).
 
 ## Compilar
 
-Requiere Java 17+ y Maven.
+Requiere Java 17+ y Maven. Todos los comandos de este README se ejecutan
+**desde la raíz del repositorio**, sin necesidad de `cd` a ningún subproyecto
+(usan `mvn -f <módulo>/pom.xml` y `docker compose -f local-dev/docker-compose.yml`).
 
-```bash
-cd source && mvn clean install
+```powershell
+mvn -f source/pom.xml clean install
 ```
 
 Genera `source/target/rft-devtools-kafka-cucumber-0.1.0-SNAPSHOT.jar` y
@@ -72,14 +74,19 @@ versión que fija `pom.xml`) para poder probar la librería contra
 infraestructura real en vez de contra los endpoints QA/DEV que reciben
 las URLs como parámetro.
 
-```bash
-cd local-dev && docker compose up -d && docker compose ps && ./register-demo-schemas.sh
+```powershell
+docker compose -f local-dev/docker-compose.yml up -d
+docker compose -f local-dev/docker-compose.yml ps
+powershell -File local-dev/register-demo-schemas.ps1
 ```
+
+(En macOS/Linux o Git Bash, usa `bash local-dev/register-demo-schemas.sh`
+en vez del `.ps1`.)
 
 Para parar y limpiar volúmenes:
 
-```bash
-cd local-dev && docker compose down -v
+```powershell
+docker compose -f local-dev/docker-compose.yml down -v
 ```
 
 Puertos expuestos en el host:
@@ -97,8 +104,9 @@ La librería es un jar sin clase `main`, así que `demo-app/` es una app
 Spring Boot mínima que sí se puede arrancar, para ejercitar la librería de
 verdad contra un perfil:
 
-```bash
-mvn -f source/pom.xml clean install && cd demo-app && mvn spring-boot:run -Dspring-boot.run.profiles=local
+```powershell
+mvn -f source/pom.xml clean install
+mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
 Según las properties `app.kafka.*` activas puede: listar topics, descargar
