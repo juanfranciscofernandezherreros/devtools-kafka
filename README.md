@@ -44,7 +44,8 @@ por properties):
 Paquetes internos (`com.devkafka.*`):
 
 - `config` — auto-configuración y `@ConfigurationProperties` (`library.schema.*`)
-- `client` — clientes HTTP hacia Schema Registry y Kafka REST Proxy
+- `client` — clientes HTTP hacia Schema Registry (esquema/versiones/lista
+  de subjects) y Kafka REST Proxy
 - `runner` — orquestación: descarga de esquema + envío de mensaje Avro
 - `avro` — utilidades para generar registros Avro de prueba y convertirlos a JSON
 - `exception` — excepciones propias de la librería
@@ -100,10 +101,13 @@ verdad contra un perfil:
 mvn -f source/pom.xml clean install && cd demo-app && mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Según `app.kafka.send-sample-message` / `app.kafka.download-schema-only`
-puede listar topics, descargar solo el esquema de un topic, o descargar +
-enviar un mensaje Avro de ejemplo. Ver [demo-app/README.md](demo-app/README.md)
-para el detalle de cada modo y cómo apuntar a `dev`/`integration`/`qa`.
+Según las properties `app.kafka.*` activas puede: listar topics, descargar
+solo el esquema de un topic (o **todos** los subjects del registry de una
+vez con `download-all-schemas`), o descargar + enviar un mensaje Avro —
+con un payload fijo o **generado automáticamente** a partir del esquema
+descargado (`auto-generate-sample`, vía `AvroDummyFiller`). Ver
+[demo-app/README.md](demo-app/README.md) para la tabla completa de modos
+y cómo apuntar a `dev`/`integration`/`qa`.
 
 ## Configurar una app consumidora
 
