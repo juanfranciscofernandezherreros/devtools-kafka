@@ -13,7 +13,7 @@ library:
 
 app:
   kafka:
-    rest-proxy-url: https://<kafka-rest-proxy-integration-host>/topics
+    rest-proxy-url: https://rft-confluent-cito-rest-rft-int-bec.ingress.cph01.ocp.six-group.net/topics
     schema-url-suffix: /versions/latest
     topic-name: test-topic
     key-payload-file: samples/key.json
