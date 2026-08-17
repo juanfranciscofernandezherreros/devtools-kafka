@@ -58,8 +58,7 @@ propios, no para producción).
 Requiere Java 17+ y Maven.
 
 ```bash
-cd source
-mvn clean install
+cd source && mvn clean install
 ```
 
 Genera `source/target/rft-devtools-kafka-cucumber-0.1.0-SNAPSHOT.jar` y
@@ -73,11 +72,13 @@ infraestructura real en vez de contra los endpoints QA/DEV que reciben
 las URLs como parámetro.
 
 ```bash
-cd local-dev
-docker compose up -d      # arranca Zookeeper, Kafka, Schema Registry y REST Proxy
-docker compose ps         # confirma que los 4 servicios estén "healthy"
-./register-demo-schemas.sh    # registra los esquemas de ejemplo (solo la primera vez)
-docker compose down -v    # para y limpia volúmenes
+cd local-dev && docker compose up -d && docker compose ps && ./register-demo-schemas.sh
+```
+
+Para parar y limpiar volúmenes:
+
+```bash
+cd local-dev && docker compose down -v
 ```
 
 Puertos expuestos en el host:
@@ -96,9 +97,7 @@ Spring Boot mínima que sí se puede arrancar, para ejercitar la librería de
 verdad contra un perfil:
 
 ```bash
-mvn -f source/pom.xml clean install     # instala la librería en el repo Maven local
-cd demo-app
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn -f source/pom.xml clean install && cd demo-app && mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 Según `app.kafka.send-sample-message` / `app.kafka.download-schema-only`

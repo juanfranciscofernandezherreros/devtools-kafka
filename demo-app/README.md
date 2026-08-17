@@ -9,17 +9,7 @@ esquema Avro de `test-topic` y envía un mensaje de ejemplo
 ## Arrancar contra el stack local
 
 ```bash
-# 1) Instalar la librería en el repo Maven local
-mvn -f ../source/pom.xml clean install
-
-# 2) Levantar Kafka local (si no está ya arriba)
-cd ../local-dev && docker compose up -d && cd ../demo-app
-
-# 3) Registrar los esquemas de ejemplo en el Schema Registry local (solo la primera vez)
-../local-dev/register-demo-schemas.sh
-
-# 4) Arrancar con el perfil "local"
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn -f ../source/pom.xml clean install && cd ../local-dev && docker compose up -d && ./register-demo-schemas.sh && cd ../demo-app && mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 ## Arrancar contra dev / integration / qa
@@ -66,6 +56,5 @@ proceso hijo de `spring-boot:run`.)
 ## Jar ejecutable
 
 ```bash
-mvn clean package
-java -jar target/devkafka-demo-app-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+mvn clean package && java -jar target/devkafka-demo-app-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
 ```
