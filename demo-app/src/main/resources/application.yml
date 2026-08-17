@@ -5,3 +5,12 @@ spring:
 logging:
   level:
     com.devkafka: INFO
+
+# Defaults shared by every profile (local/dev/integration/qa). Override
+# per-run with --app.kafka.topic-name=... etc. when pointing at a real topic.
+app:
+  kafka:
+    topic-name: test-topic
+    key-payload-file: samples/key.json
+    value-payload-file: samples/value.json
+    send-sample-message: true

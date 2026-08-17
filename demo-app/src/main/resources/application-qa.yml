@@ -15,6 +15,4 @@ app:
   kafka:
     rest-proxy-url: https://<kafka-rest-proxy-qa-host>/topics
     schema-url-suffix: /versions/latest
-    topic-name: test-topic
-    key-payload-file: samples/key.json
-    value-payload-file: samples/value.json
+    send-sample-message: false

@@ -15,6 +15,3 @@ app:
   kafka:
     rest-proxy-url: http://localhost:8082/topics
     schema-url-suffix: /versions/latest
-    topic-name: test-topic
-    key-payload-file: samples/key.json
-    value-payload-file: samples/value.json

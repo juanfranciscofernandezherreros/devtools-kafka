@@ -14,9 +14,8 @@ app:
   kafka:
     rest-proxy-url: https://rft-confluent-cito-rest-rft-int-bec.ingress.cph01.ocp.six-group.net/topics
     schema-url-suffix: /versions/latest
-    topic-name: test-topic
-    key-payload-file: samples/key.json
-    value-payload-file: samples/value.json
-    # "test-topic" doesn't exist as a subject in the real dev registry yet:
-    # set to a real topic name (see below) before flipping this to true.
+    # "test-topic" (the shared default) doesn't exist as a subject in the
+    # real dev registry: override --app.kafka.topic-name=<real-topic> and
+    # --app.kafka.send-sample-message=true (or auto-generate-sample=true)
+    # per run instead of hardcoding a topic here.
     send-sample-message: false
