@@ -13,7 +13,7 @@
   <description>Librería con AutoConfiguration, RestTemplate y Schema Registry</description>
 
   <properties>
-    <revision>1.0.0</revision>
+    <revision>0.1.0</revision>
     <sha1></sha1>
     <changelist>-SNAPSHOT</changelist>
 
