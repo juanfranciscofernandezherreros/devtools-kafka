@@ -52,11 +52,10 @@ topics o solo descargar esquemas no falla aunque el envío del mensaje sí lo
 haría.
 
 Cada vez que se envía un mensaje (las dos primeras filas de la tabla),
-`KafkaDemoRunner` lo vuelve a leer justo después mediante un consumer group
-temporal del REST Proxy y lo guarda en
-`<schema-output-dir>/received/<topic-name>-received.json` (key, value,
-partition y offset), para poder verificar el envío sin montar un consumidor
-aparte.
+`KafkaDemoRunner` guarda el payload exacto enviado (key + value, tanto si
+viene de `key-payload-file`/`value-payload-file` como si es el generado con
+`auto-generate-sample`) en
+`<schema-output-dir>/sent/<topic-name>-sent.json`.
 
 Ejemplo para descargar solo el esquema de un topic real en `dev`:
 

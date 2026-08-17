@@ -7,12 +7,14 @@ import com.devkafka.client.SchemaRegistryClientService;
 import com.devkafka.runner.GenericRunnerBean;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -63,7 +65,7 @@ public class KafkaDemoRunner implements CommandLineRunner {
                     properties.getRestProxyUrl(),
                     properties.getSchemaUrlSuffix()
             );
-            downloadSentMessage();
+            saveSentMessage(keyFile, valueFile);
             return;
         }
 
@@ -113,20 +115,22 @@ public class KafkaDemoRunner implements CommandLineRunner {
     }
 
     /**
-     * Reads back the message just produced (via a throwaway REST Proxy
-     * consumer group) and saves it next to the other generated artifacts,
-     * so the send can be verified without a separate consumer tool.
+     * Saves the exact key/value payload that was just sent (static files or
+     * the auto-generated sample) as a single combined JSON, so the message
+     * content is available without re-reading it back from Kafka.
      */
-    private void downloadSentMessage() throws Exception {
+    private void saveSentMessage(String keyFile, String valueFile) throws Exception {
         String topicName = properties.getTopicName();
-        String records = restProxyClient.consumeLatestMessages(properties.getRestProxyUrl(), topicName);
-        String lastRecord = lastRecord(records);
 
-        Path outDir = Path.of(properties.getSchemaOutputDir()).resolve("received");
+        ObjectNode message = MAPPER.createObjectNode();
+        message.set("key", MAPPER.readTree(new File(keyFile)));
+        message.set("value", MAPPER.readTree(new File(valueFile)));
+
+        Path outDir = Path.of(properties.getSchemaOutputDir()).resolve("sent");
         Files.createDirectories(outDir);
-        Path file = outDir.resolve(topicName + "-received.json");
-        Files.writeString(file, prettyPrint(lastRecord) + System.lineSeparator());
-        log.info("Downloaded sent message(s) for [{}] -> {}", topicName, file.toAbsolutePath());
+        Path file = outDir.resolve(topicName + "-sent.json");
+        Files.writeString(file, MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(message) + System.lineSeparator());
+        log.info("Saved sent message for [{}] -> {}", topicName, file.toAbsolutePath());
     }
 
     private void downloadSchemas() throws Exception {
@@ -153,14 +157,6 @@ public class KafkaDemoRunner implements CommandLineRunner {
         Path file = dir.resolve(subject + ".avsc");
         Files.writeString(file, prettyPrint(schemaJson) + System.lineSeparator());
         return file;
-    }
-
-    private static String lastRecord(String recordsJsonArray) throws Exception {
-        JsonNode records = MAPPER.readTree(recordsJsonArray);
-        if (!records.isArray() || records.isEmpty()) {
-            return recordsJsonArray;
-        }
-        return records.get(records.size() - 1).toString();
     }
 
     private static String prettyPrint(String schema) {
