@@ -36,6 +36,33 @@ Estos tres perfiles (`src/main/resources/application-{dev,integration,qa}.yml`)
 todavía tienen placeholders (`<schema-registry-*-host>`, etc.) — rellénalos
 con las URLs reales antes de que funcionen contra esos entornos.
 
+## Modos de ejecución (`app.kafka.*`)
+
+`KafkaDemoRunner` siempre lista los topics del REST Proxy al arrancar.
+Además, según las properties activas:
+
+| `send-sample-message` | `download-schema-only` | Qué hace |
+|---|---|---|
+| `true` | (ignorado) | Descarga el esquema key+value **y envía** un mensaje Avro de ejemplo al REST Proxy |
+| `false` | `true` | Solo descarga el esquema key+value de `topic-name` a `schema-output-dir` (por defecto `schemas/`), sin enviar nada |
+| `false` | `false` | Solo lista los topics |
+
+Útil cuando tienes la URL del Schema Registry pero `topic-name` (`test-topic`
+por defecto) no existe como subject real en ese entorno — solo listar
+topics o solo descargar esquemas no falla aunque el envío del mensaje sí lo
+haría.
+
+Ejemplo para descargar solo el esquema de un topic real en `dev`:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev \
+  "-Dspring-boot.run.arguments=--app.kafka.topic-name=mi-topic-real --app.kafka.send-sample-message=false --app.kafka.download-schema-only=true"
+```
+
+(`-Dspring-boot.run.arguments=...` pasa argumentos al programa — a
+diferencia de `-D<prop>=<valor>` suelto, que Maven **no** reenvía al
+proceso hijo de `spring-boot:run`.)
+
 ## Jar ejecutable
 
 ```bash

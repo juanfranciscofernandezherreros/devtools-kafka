@@ -24,4 +24,17 @@ public class DemoKafkaProperties {
      * the Schema Registry isn't configured yet).
      */
     private boolean sendSampleMessage = true;
+
+    /**
+     * When true (and sendSampleMessage is false), downloads the key/value
+     * schemas for topicName and saves them under schemaOutputDir, without
+     * sending a sample message. Ignored if sendSampleMessage is true, since
+     * that flow already downloads the schemas as part of sending.
+     */
+    private boolean downloadSchemaOnly = false;
+
+    /**
+     * Directory schemas are saved to when downloadSchemaOnly is true.
+     */
+    private String schemaOutputDir = "schemas";
 }
