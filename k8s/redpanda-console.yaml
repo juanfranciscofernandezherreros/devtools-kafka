@@ -53,6 +53,27 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: wait-for-platform-apis
+          image: docker.redpanda.com/redpandadata/console:v3.9.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              until wget -qO- http://schema-registry.kafka-shared.svc.cluster.local:8081/subjects >/dev/null
+              && wget -qO- http://kafka-connect.kafka-shared.svc.cluster.local:8083/ >/dev/null;
+              do sleep 3; done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
       containers:
         - name: redpanda-console
           image: docker.redpanda.com/redpandadata/console:v3.9.0
