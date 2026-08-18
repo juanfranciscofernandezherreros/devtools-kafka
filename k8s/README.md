@@ -21,6 +21,14 @@ KAFKA_BOOTSTRAP_SERVERS=kafka.kafka-shared.svc.cluster.local:9092
 
 No se debe volver a incluir un StatefulSet Kafka dentro de cada microservicio.
 
+## Contratos Avro
+
+Los topics de negocio de `crud-crypto-relay`, `crud-sales-streams` y
+`crud-sensores-stream` usan valores Avro y claves String. El catálogo completo,
+los subjects y la estrategia de migración desde JSON están documentados en
+[`AVRO.md`](AVRO.md). El Job GitOps `register-avro-schemas` registra los seis
+contratos automáticamente en Schema Registry después de la sincronización.
+
 ## Visualizar los tópicos
 
 Desde Windows:

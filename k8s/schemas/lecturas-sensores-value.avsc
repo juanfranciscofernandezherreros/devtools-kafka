@@ -1,0 +1,1 @@
+{"type":"record","name":"LecturaSensorEvent","namespace":"com.miempresa.iot.avro","fields":[{"name":"sensorId","type":["null","string"],"default":null},{"name":"lectura","type":["null","double"],"default":null}]}

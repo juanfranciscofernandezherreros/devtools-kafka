@@ -118,6 +118,10 @@ http://kafka-rest-proxy.kafka-shared.svc.cluster.local:8082
 Es una configuración de desarrollo de un solo nodo y factor de replicación 1.
 Los datos se conservan en volúmenes persistentes de Kubernetes.
 
+Los contratos Avro de los microservicios Kafka se versionan en `k8s/schemas/`
+y se registran automáticamente con el Job `register-avro-schemas`. La relación
+entre topics, subjects y registros está en [k8s/AVRO.md](k8s/AVRO.md).
+
 ## Probarla en marcha: `demo-app`
 
 La librería es un jar sin clase `main`, así que `demo-app/` es una app

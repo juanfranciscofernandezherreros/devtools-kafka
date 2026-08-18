@@ -10,6 +10,7 @@ resources:
   - kafka-service.yaml
   - kafka-statefulset.yaml
   - schema-registry.yaml
+  - avro-schema-registrar.yaml
   - rest-proxy.yaml
   - kafka-ui.yaml
   - kafka-connect.yaml
@@ -19,3 +20,16 @@ labels:
   - pairs:
       app.kubernetes.io/part-of: shared-kafka-platform
       app.kubernetes.io/managed-by: argocd
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: avro-schemas
+    files:
+      - schemas/crypto-prices-in-value.avsc
+      - schemas/crypto-prices-out-value.avsc
+      - schemas/orders-topic1-value.avsc
+      - schemas/total-sales-topic1-value.avsc
+      - schemas/lecturas-sensores-value.avsc
+      - schemas/totales-sensores-value.avsc

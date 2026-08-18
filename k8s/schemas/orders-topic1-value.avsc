@@ -1,0 +1,1 @@
+{"type":"record","name":"OrderEvent","namespace":"com.example.sales.avro","fields":[{"name":"orderId","type":["null","string"],"default":null},{"name":"customerId","type":["null","string"],"default":null},{"name":"amount","type":["null","double"],"default":null}]}
