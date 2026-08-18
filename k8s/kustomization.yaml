@@ -12,7 +12,6 @@ resources:
   - schema-registry.yaml
   - rest-proxy.yaml
   - kafka-ui.yaml
-  - redpanda-console.yaml
 
 labels:
   - pairs:
