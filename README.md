@@ -98,6 +98,26 @@ Puertos expuestos en el host:
 | Schema Registry | `8081` |
 | Kafka REST Proxy | `8082` |
 
+## Desplegar el Kafka compartido con Argo CD
+
+El directorio `k8s/` contiene el stack equivalente para Kubernetes. Argo CD lo
+despliega en el namespace `kafka-shared` y los microservicios usan un único
+broker mediante este endpoint interno:
+
+```text
+kafka.kafka-shared.svc.cluster.local:9092
+```
+
+También quedan disponibles Schema Registry y REST Proxy:
+
+```text
+http://schema-registry.kafka-shared.svc.cluster.local:8081
+http://kafka-rest-proxy.kafka-shared.svc.cluster.local:8082
+```
+
+Es una configuración de desarrollo de un solo nodo y factor de replicación 1.
+Los datos se conservan en volúmenes persistentes de Kubernetes.
+
 ## Probarla en marcha: `demo-app`
 
 La librería es un jar sin clase `main`, así que `demo-app/` es una app
