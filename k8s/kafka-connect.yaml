@@ -75,7 +75,7 @@ spec:
               value: /usr/share/java,/usr/share/confluent-hub-components
             - name: CONNECT_LOG4J_ROOT_LOGLEVEL
               value: INFO
-            - name: CONNECT_HEAP_OPTS
+            - name: KAFKA_HEAP_OPTS
               value: -Xms256m -Xmx512m
           readinessProbe:
             httpGet:
