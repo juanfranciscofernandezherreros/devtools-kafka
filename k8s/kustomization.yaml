@@ -11,6 +11,7 @@ resources:
   - kafka-statefulset.yaml
   - schema-registry.yaml
   - rest-proxy.yaml
+  - kafka-ui.yaml
 
 labels:
   - pairs:
