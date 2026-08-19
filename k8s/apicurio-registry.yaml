@@ -106,9 +106,11 @@ spec:
     spec:
       enableServiceLinks: false
       securityContext:
+        # The image writes its runtime config.js/index.html at startup as its
+        # built-in user (UID 1001, GID 0, arbitrary-UID/group-writable style).
+        # Forcing a different UID/GID breaks that write, so run as the
+        # image's own default user instead of pinning one.
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
