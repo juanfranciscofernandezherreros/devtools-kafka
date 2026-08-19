@@ -57,9 +57,12 @@ compatible con Confluent) y Kafka Connect.
 ## Interfaz web de Apicurio Registry
 
 Apicurio Registry despliega su UI como un componente aparte
-(`apicurio-registry-ui`), independiente del backend.
+(`apicurio-registry-ui`), independiente del backend. Como la UI corre en el
+navegador (no en el pod), necesita alcanzar el backend en un puerto local, así
+que hacen falta **dos** port-forwards a la vez (en dos terminales):
 
 ```powershell
+kubectl port-forward svc/apicurio-registry -n kafka-shared 8081:8080
 kubectl port-forward svc/apicurio-registry-ui -n kafka-shared 8087:8080
 ```
 

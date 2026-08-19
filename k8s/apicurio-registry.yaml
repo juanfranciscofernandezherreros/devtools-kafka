@@ -50,6 +50,10 @@ spec:
               value: kafkasql
             - name: APICURIO_KAFKASQL_BOOTSTRAP_SERVERS
               value: kafka.kafka-shared.svc.cluster.local:9092
+            # The UI runs in the browser, so its cross-origin calls come from
+            # whatever local port it's port-forwarded to (see README.md).
+            - name: QUARKUS_HTTP_CORS_ORIGINS
+              value: http://localhost:8087
           readinessProbe:
             httpGet:
               path: /health/ready
@@ -115,8 +119,11 @@ spec:
             - name: http
               containerPort: 8080
           env:
+            # Browser-side SPA: this must be a URL the browser can reach, not
+            # the cluster-internal DNS name. It expects the backend to be
+            # port-forwarded to localhost:8081 alongside this UI (see README.md).
             - name: REGISTRY_API_URL
-              value: http://apicurio-registry.kafka-shared.svc.cluster.local:8080/apis/registry/v3
+              value: http://localhost:8081/apis/registry/v3
           readinessProbe:
             tcpSocket:
               port: http
