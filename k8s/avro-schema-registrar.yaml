@@ -24,7 +24,7 @@ spec:
           command: ["/bin/sh", "-ec"]
           args:
             - |
-              registry="http://schema-registry.kafka-shared.svc.cluster.local:8081"
+              registry="http://apicurio-registry.kafka-shared.svc.cluster.local:8080/apis/ccompat/v7"
               until curl --fail --silent --show-error "${registry}/subjects" >/dev/null; do
                 sleep 5
               done

@@ -41,7 +41,7 @@ spec:
             - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
               value: kafka.kafka-shared.svc.cluster.local:9092
             - name: KAFKA_CLUSTERS_0_SCHEMAREGISTRY
-              value: http://schema-registry.kafka-shared.svc.cluster.local:8081
+              value: http://apicurio-registry.kafka-shared.svc.cluster.local:8080/apis/ccompat/v7
             - name: DYNAMIC_CONFIG_ENABLED
               value: "false"
           readinessProbe:

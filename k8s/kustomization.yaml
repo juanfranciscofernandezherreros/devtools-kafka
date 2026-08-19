@@ -9,7 +9,7 @@ resources:
   - zookeeper-statefulset.yaml
   - kafka-service.yaml
   - kafka-statefulset.yaml
-  - schema-registry.yaml
+  - apicurio-registry.yaml
   - avro-schema-registrar.yaml
   - rest-proxy.yaml
   - kafka-ui.yaml

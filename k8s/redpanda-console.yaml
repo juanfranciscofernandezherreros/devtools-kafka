@@ -12,7 +12,7 @@ data:
     schemaRegistry:
       enabled: true
       urls:
-        - http://schema-registry.kafka-shared.svc.cluster.local:8081
+        - http://apicurio-registry.kafka-shared.svc.cluster.local:8080/apis/ccompat/v7
     kafkaConnect:
       enabled: true
       clusters:
@@ -60,7 +60,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - >-
-              until wget -qO- http://schema-registry.kafka-shared.svc.cluster.local:8081/subjects >/dev/null
+              until wget -qO- http://apicurio-registry.kafka-shared.svc.cluster.local:8080/apis/ccompat/v7/subjects >/dev/null
               && wget -qO- http://kafka-connect.kafka-shared.svc.cluster.local:8083/ >/dev/null;
               do sleep 3; done
           resources:
