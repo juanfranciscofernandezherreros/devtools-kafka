@@ -14,7 +14,7 @@
   <description>Minimal Spring Boot library for Schema Registry, Avro test payload generation and Kafka REST Proxy publishing.</description>
 
   <properties>
-    <revision>0.1.0</revision>
+    <revision>0.2.0</revision>
     <sha1></sha1>
     <changelist>-SNAPSHOT</changelist>
 
