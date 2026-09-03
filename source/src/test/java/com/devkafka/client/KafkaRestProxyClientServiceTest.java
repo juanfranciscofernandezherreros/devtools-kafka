@@ -17,23 +17,19 @@ class KafkaRestProxyClientServiceTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private static MockWebServer mockWebServer;
+    private MockWebServer mockWebServer;
     private KafkaRestProxyClientService service;
 
-    @BeforeAll
-    static void startServer() throws IOException {
+    @BeforeEach
+    void setUp() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-    }
-
-    @AfterAll
-    static void stopServer() throws IOException {
-        mockWebServer.shutdown();
-    }
-
-    @BeforeEach
-    void setUp() {
         service = new KafkaRestProxyClientService(new SchemaRegistryProperties());
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        mockWebServer.shutdown();
     }
 
     @Test
