@@ -1,157 +1,106 @@
-# rft-devtools-kafka-cucumber
+# devtools-kafka
 
-Librería Spring Boot (`AutoConfiguration`) que expone clientes REST para
-Kafka REST Proxy y Confluent Schema Registry, junto con utilidades Avro,
-para que otros servicios puedan descargar esquemas, generar mensajes de
-prueba y enviarlos vía REST Proxy sin reimplementar ese cableado en cada
-proyecto.
+Minimal Java 17 / Spring Boot library for Kafka integration testing through Confluent-compatible HTTP APIs.
 
-## Estructura del repositorio
+## What the library does
 
-```
-.
-├── source/             Proyecto Maven (la librería en sí)
-│   ├── pom.xml
-│   └── src/
-├── demo-app/            App Spring Boot runnable que consume la librería
-│   ├── pom.xml
-│   ├── samples/                 Payloads de ejemplo (key.json, value.json)
-│   └── src/main/resources/      application-{local,dev,integration,qa}.yml
-├── local-dev/           Infraestructura Kafka local para desarrollo/pruebas
-│   ├── docker-compose.yml       Zookeeper + Kafka + Schema Registry + REST Proxy
-│   ├── register-demo-schemas.ps1/.sh  Registra los esquemas de ejemplo en el Schema Registry local
-│   └── config/                   Properties de ejemplo para apps consumidoras
-│       ├── application-local.yml
-│       ├── application-dev.yml
-│       ├── application-integration.yml
-│       └── application-qa.yml
-├── .gitlab-ci.yml       Pipeline (build backend Java, imagen "backend")
-└── sonar-project.properties
+- Downloads schemas from Schema Registry / Apicurio using the Confluent compatibility API.
+- Generates dummy Avro values from an Avro `Schema`.
+- Converts generated Avro values to JSON.
+- Lists Kafka topics through Kafka REST Proxy.
+- Publishes Avro key/value messages through Kafka REST Proxy.
+- Provides Spring Boot auto-configuration for the two HTTP clients.
+
+The repository intentionally contains only library code and unit tests. Demo applications, Cucumber scenarios and Kafka/Kubernetes infrastructure belong in consumer/test repositories.
+
+## Maven coordinates
+
+```xml
+<dependency>
+  <groupId>com.devkafka</groupId>
+  <artifactId>rft-devtools-kafka-cucumber</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+</dependency>
 ```
 
-## Qué expone la librería
+Build and install locally:
 
-`LibraryAutoConfiguration` registra automáticamente (activable/desactivable
-por properties):
-
-| Bean | Paquete | Property para desactivar |
-|---|---|---|
-| `SchemaRegistryClientService` | `client` | `library.schema.enabled=false` |
-| `SchemaDownload` | `runner` | `library.schema.enabled=false` |
-| `GenericRunnerBean` | `runner` | `library.runner.enabled=false` |
-| `KafkaRestProxyClientService` | `client` | `library.restproxy.enabled=false` |
-
-Paquetes internos (`com.devkafka.*`):
-
-- `config` — auto-configuración y `@ConfigurationProperties` (`library.schema.*`)
-- `client` — clientes HTTP hacia Schema Registry (esquema/versiones/lista
-  de subjects) y Kafka REST Proxy
-- `runner` — orquestación: descarga de esquema + envío de mensaje Avro
-- `avro` — utilidades para generar registros Avro de prueba y convertirlos a JSON
-- `exception` — excepciones propias de la librería
-
-Certificados TLS: se validan por defecto; solo se ignoran cuando
-`library.schema.ignore-ssl=true` (pensado para local/dev con certificados
-propios, no para producción).
-
-## Compilar
-
-Requiere Java 17+ y Maven. Todos los comandos de este README se ejecutan
-**desde la raíz del repositorio**, sin necesidad de `cd` a ningún subproyecto
-(usan `mvn -f <módulo>/pom.xml` y `docker compose -f local-dev/docker-compose.yml`).
-
-```powershell
+```bash
 mvn -f source/pom.xml clean install
 ```
 
-Genera `source/target/rft-devtools-kafka-cucumber-0.1.0-SNAPSHOT.jar` y
-corre la suite de tests (unitarios, sin dependencias externas).
+## Main API
 
-## Levantar Kafka en local
+### Schema Registry
 
-`local-dev/docker-compose.yml` levanta un stack Confluent 7.4.4 (misma
-versión que fija `pom.xml`) para poder probar la librería contra
-infraestructura real en vez de contra los endpoints QA/DEV que reciben
-las URLs como parámetro.
+```java
+SchemaRegistryProperties properties = new SchemaRegistryProperties();
+properties.setIgnoreSsl(true); // DEV/QA only when required
 
-```powershell
-docker compose -f local-dev/docker-compose.yml up -d
-docker compose -f local-dev/docker-compose.yml ps
-powershell -File local-dev/register-demo-schemas.ps1
+SchemaRegistryClientService registry = new SchemaRegistryClientService(properties);
+String schema = registry.getLatestSchema(
+    "https://registry/apis/ccompat/v7/subjects/",
+    "my-topic-value",
+    "/versions/latest"
+);
 ```
 
-(En macOS/Linux o Git Bash, usa `bash local-dev/register-demo-schemas.sh`
-en vez del `.ps1`.)
+### Generate a dummy Avro payload
 
-Para parar y limpiar volúmenes:
-
-```powershell
-docker compose -f local-dev/docker-compose.yml down -v
+```java
+Schema avroSchema = new Schema.Parser().parse(schema);
+Object dummy = AvroDummyFiller.generateDummyValue(avroSchema);
+String json = AvroJsonConverter.toJson(dummy, avroSchema);
 ```
 
-Puertos expuestos en el host:
+### Publish through Kafka REST Proxy
 
-| Servicio | Puerto |
-|---|---|
-| Zookeeper | `2181` |
-| Kafka (broker externo) | `9092` |
-| Schema Registry | `8081` |
-| Kafka REST Proxy | `8082` |
-
-## Desplegar el Kafka compartido con Argo CD
-
-El directorio `k8s/` contiene el stack equivalente para Kubernetes. Argo CD lo
-despliega en el namespace `kafka-shared` y los microservicios usan un único
-broker mediante este endpoint interno:
-
-```text
-kafka.kafka-shared.svc.cluster.local:9092
+```java
+KafkaRestProxyClientService restProxy = new KafkaRestProxyClientService(properties);
+restProxy.sendAvroMessage(
+    "https://rest-proxy/topics",
+    "my-topic",
+    keySchema,
+    valueSchema,
+    keyJsonNode,
+    valueJsonNode
+);
 ```
 
-También quedan disponibles Schema Registry y REST Proxy:
+## Spring Boot auto-configuration
 
-```text
-http://schema-registry.kafka-shared.svc.cluster.local:8081
-http://kafka-rest-proxy.kafka-shared.svc.cluster.local:8082
+When the JAR is on the classpath, Spring Boot can expose:
+
+- `SchemaRegistryClientService`
+- `KafkaRestProxyClientService`
+
+SSL certificate validation is enabled by default. Disable it only for controlled development/test environments:
+
+```yaml
+library:
+  schema:
+    ignore-ssl: true
 ```
 
-Es una configuración de desarrollo de un solo nodo y factor de replicación 1.
-Los datos se conservan en volúmenes persistentes de Kubernetes.
+Optional bean switches:
 
-Los contratos Avro de los microservicios Kafka se versionan en `k8s/schemas/`
-y se registran automáticamente con el Job `register-avro-schemas`. La relación
-entre topics, subjects y registros está en [k8s/AVRO.md](k8s/AVRO.md).
-
-## Probarla en marcha: `demo-app`
-
-La librería es un jar sin clase `main`, así que `demo-app/` es una app
-Spring Boot mínima que sí se puede arrancar, para ejercitar la librería de
-verdad contra un perfil:
-
-```powershell
-mvn -f source/pom.xml clean install
-mvn -f demo-app/pom.xml spring-boot:run "-Dspring-boot.run.profiles=local"
+```yaml
+library:
+  schema:
+    enabled: true
+  restproxy:
+    enabled: true
 ```
 
-Según las properties `app.kafka.*` activas puede: listar topics, descargar
-solo el esquema de un topic (o **todos** los subjects del registry de una
-vez con `download-all-schemas`), o descargar + enviar un mensaje Avro —
-con un payload fijo o **generado automáticamente** a partir del esquema
-descargado (`auto-generate-sample`, vía `AvroDummyFiller`). Ver
-[demo-app/README.md](demo-app/README.md) para la tabla completa de modos
-y cómo apuntar a `dev`/`integration`/`qa`.
+## Scope
 
-## Configurar una app consumidora
+This library deliberately does **not** include:
 
-`GenericRunnerBean.run(keyFile, valueFile, schemaRegistryUrl, topicName,
-restProxyUrl, urlPrefix)` recibe las URLs de Schema Registry y REST Proxy
-como argumentos, no las resuelve de properties. `local-dev/config/`
-contiene plantillas listas para copiar al proyecto consumidor, una por
-entorno (`local`, `dev`, `integration`, `qa`), documentando las properties
-reales que sí enlaza la librería (`library.schema.*`) y las que debe
-definir la app consumidora para pasar a `runner.run(...)`.
+- Kafka brokers or Docker Compose
+- Kubernetes manifests
+- demo applications
+- Cucumber features/step definitions
+- Spring Kafka producer/consumer clients
+- Confluent Java serializers
 
-## CI
-
-`.gitlab-ci.yml` construye el módulo Java bajo `source/` con la plantilla
-backend estándar (`IMAGE_LOCATION: backend`, `JAVA_VERSION: 17`).
+Those concerns should live in the application or test project consuming this JAR.

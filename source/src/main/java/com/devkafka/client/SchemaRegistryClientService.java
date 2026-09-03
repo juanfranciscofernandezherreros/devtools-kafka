@@ -1,149 +1,106 @@
 package com.devkafka.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.SchemaRegistryException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Client for the Schema Registry. Certificate validation is enabled by
- * default; it's only skipped when {@code library.schema.ignore-ssl=true}
- * (local/dev environments with self-signed certs).
+ * Minimal HTTP client for Confluent-compatible Schema Registry APIs.
  */
-@Service
-@Slf4j
 public class SchemaRegistryClientService {
 
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-    private final boolean ignoreSsl;
+    private static final Logger log = LoggerFactory.getLogger(SchemaRegistryClientService.class);
+
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public SchemaRegistryClientService(SchemaRegistryProperties properties) {
-        this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
-        this.ignoreSsl = properties.isIgnoreSsl();
+        this.httpClient = HttpClientFactory.create(properties.isIgnoreSsl());
     }
 
-    /**
-     * Downloads the latest schema of a subject.
-     *
-     * @param subject Registry subject.
-     * @return Schema as a String (JSON raw).
-     */
     public String getLatestSchema(String schemaRegistry, String subject, String urlPrefix) {
-        if (ignoreSsl) {
-            disableSSLVerification();
-        }
-
         String url = schemaRegistry + subject + urlPrefix;
-        log.info("Searching for schema at URL: " + url);
+        log.info("Searching for schema at URL: {}", url);
 
         try {
-            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-            JsonNode root = objectMapper.readTree(response.getBody());
+            HttpResponse<String> response = get(url);
+            ensureSuccessful(response, "Schema registry fetch failed");
 
-            String schema = root.get("schema").asText();
-            log.info("Schema obtained for [" + subject + "]");
-            return schema;
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode schemaNode = root.get("schema");
+            if (schemaNode == null || schemaNode.isNull()) {
+                throw new SchemaRegistryException("Schema registry fetch failed: response does not contain 'schema'");
+            }
 
-        } catch (Exception e) {
-            log.error("Error obtaining schema [" + subject + "]: " + e.getMessage());
+            log.info("Schema obtained for [{}]", subject);
+            return schemaNode.asText();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SchemaRegistryException("Schema registry fetch interrupted", e);
+        } catch (IOException e) {
             throw new SchemaRegistryException("Schema registry fetch failed", e);
         }
     }
 
-    /**
-     * Lists every subject registered in the Schema Registry.
-     *
-     * @param schemaRegistry base registry URL (e.g. http://localhost:8081/subjects/)
-     * @return subject names.
-     */
     public List<String> listSubjects(String schemaRegistry) {
-        if (ignoreSsl) {
-            disableSSLVerification();
-        }
-
-        String url = schemaRegistry.endsWith("/") ? schemaRegistry.substring(0, schemaRegistry.length() - 1) : schemaRegistry;
-        log.info("Listing subjects at URL: " + url);
+        String url = removeTrailingSlash(schemaRegistry);
+        log.info("Listing subjects at URL: {}", url);
 
         try {
-            ResponseEntity<String[]> response = restTemplate.getForEntity(url, String[].class);
-            return Arrays.asList(response.getBody());
-
-        } catch (Exception e) {
-            log.error("Error listing subjects: " + e.getMessage());
+            HttpResponse<String> response = get(url);
+            ensureSuccessful(response, "Schema registry list-subjects failed");
+            return Arrays.asList(objectMapper.readValue(response.body(), String[].class));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SchemaRegistryException("Schema registry list-subjects interrupted", e);
+        } catch (IOException e) {
             throw new SchemaRegistryException("Schema registry list-subjects failed", e);
         }
     }
 
-    /**
-     * Lists all published version numbers of a subject.
-     *
-     * @param subject Registry subject.
-     * @return version numbers, oldest first.
-     */
     public List<Integer> listVersions(String schemaRegistry, String subject) {
-        if (ignoreSsl) {
-            disableSSLVerification();
-        }
-
         String url = schemaRegistry + subject + "/versions";
-        log.info("Listing versions at URL: " + url);
+        log.info("Listing versions at URL: {}", url);
 
         try {
-            ResponseEntity<Integer[]> response = restTemplate.getForEntity(url, Integer[].class);
-            return Arrays.asList(response.getBody());
-
-        } catch (Exception e) {
-            log.error("Error listing versions [" + subject + "]: " + e.getMessage());
+            HttpResponse<String> response = get(url);
+            ensureSuccessful(response, "Schema registry list-versions failed");
+            return Arrays.asList(objectMapper.readValue(response.body(), Integer[].class));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SchemaRegistryException("Schema registry list-versions interrupted", e);
+        } catch (IOException e) {
             throw new SchemaRegistryException("Schema registry list-versions failed", e);
         }
     }
 
-    /*───────────────────────────────────────────────────────────────*/
-    /*  Disable SSL (TESTING only)                         */
-    /*───────────────────────────────────────────────────────────────*/
-    private static void disableSSLVerification() {
-        try {
-            TrustManager[] trustAll = new TrustManager[]{
-                    new X509TrustManager() {
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return new X509Certificate[0];
-                        }
+    private HttpResponse<String> get(String url) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
 
-                        public void checkClientTrusted(X509Certificate[] c, String a) {
-                        }
-
-                        public void checkServerTrusted(X509Certificate[] c, String a) {
-                        }
-                    }
-            };
-
-            SSLContext ctx = SSLContext.getInstance("TLS");
-            ctx.init(null, trustAll, new SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier((h, s) -> true);
-
-            log.info("SSL verification disabled (TEST)");
-        } catch (Exception e) {
-            log.error("Error disabling SSL verification: " + e.getMessage());
+    private static void ensureSuccessful(HttpResponse<String> response, String message) {
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new SchemaRegistryException(message + ": HTTP " + response.statusCode() + ": " + response.body());
         }
+    }
+
+    private static String removeTrailingSlash(String value) {
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }
