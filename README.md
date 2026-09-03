@@ -1,18 +1,16 @@
 # devtools-kafka
 
-Java 17 / Spring Boot library specialized in Kafka + Avro + Schema Registry + Kafka REST Proxy testing.
+Java 17 / Spring Boot library specialized in **Kafka + Avro + Schema Registry + Kafka REST Proxy testing**.
 
-## What the library does
+## 0.3.0
 
-- Downloads key/value schemas from a Confluent-compatible Schema Registry / Apicurio API.
-- Generates valid dummy Avro key/value payloads.
-- Converts Avro values to JSON.
-- Lists Kafka topics through Kafka REST Proxy.
-- Publishes Avro key/value messages through Kafka REST Proxy.
-- Provides a high-level `KafkaAvroClient` facade so consumers do not need to coordinate the low-level services themselves.
-- Provides Spring Boot auto-configuration.
+0.3.0 consolidates the public API introduced in 0.2.0 and removes the remaining legacy configuration surface.
 
-The repository intentionally contains only reusable library code and unit tests. Demo applications, Cucumber scenarios and Kafka/Kubernetes infrastructure belong in consumer/test repositories.
+- `KafkaAvroClient` is the recommended high-level API.
+- `DevKafkaProperties` is the only Spring Boot configuration class.
+- `devkafka.enabled` controls the whole auto-configuration and defaults to `true`.
+- `SchemaRegistryProperties` and its legacy client constructors were removed.
+- REST Proxy publishing accepts any successful HTTP 2xx response.
 
 ## Maven coordinates
 
@@ -20,84 +18,68 @@ The repository intentionally contains only reusable library code and unit tests.
 <dependency>
   <groupId>com.devkafka</groupId>
   <artifactId>rft-devtools-kafka-cucumber</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.3.0-SNAPSHOT</version>
 </dependency>
 ```
 
-Build and install locally:
+Build locally:
 
 ```bash
 mvn -f source/pom.xml clean install
 ```
 
-## Recommended API: KafkaAvroClient
-
-Configure Spring Boot once:
+## Configuration
 
 ```yaml
 devkafka:
+  enabled: true
   schema-registry-url: https://registry/apis/ccompat/v7/subjects
   rest-proxy-url: https://rest-proxy/topics
   schema-version-path: /versions/latest
   ignore-ssl: false
 ```
 
-Then inject the facade:
+Set `devkafka.enabled=false` to disable all library auto-configuration.
+
+SSL verification is enabled by default. Disable it only in controlled test environments.
+
+## Recommended API
 
 ```java
 @Autowired
 private KafkaAvroClient kafka;
 ```
 
-### Generate a valid dummy message
+Generate a valid dummy key/value pair from the current schemas:
 
 ```java
 KafkaAvroMessage message = kafka.generateDummy("my-topic");
 ```
 
-The library automatically downloads:
-
-- `my-topic-key`
-- `my-topic-value`
-
-and creates a JSON-compatible Avro key/value pair.
-
-### Send an existing message
+Send existing JSON payloads using the current key/value schemas:
 
 ```java
 kafka.send("my-topic", keyJsonNode, valueJsonNode);
-```
-
-Or from JSON strings:
-
-```java
+// or
 kafka.send("my-topic", keyJson, valueJson);
 ```
 
-The current key/value schemas are downloaded before publication.
-
-### Generate and send in one operation
+Generate and send in one operation:
 
 ```java
 KafkaAvroMessage sent = kafka.generateAndSend("my-topic");
 ```
 
-### Read the schemas
+Read schemas:
 
 ```java
 KafkaAvroSchemas schemas = kafka.getSchemas("my-topic");
 ```
 
-### Runtime-selected environments
-
-Tools and test suites that select DEV/INT/QA at runtime can use the explicit overloads instead of fixed Spring properties:
+For runtime-selected DEV/INT/QA environments, use the explicit overloads:
 
 ```java
-KafkaAvroMessage message = kafka.generateDummy(
-    topic,
-    schemaRegistryUrl,
-    "/versions/latest"
-);
+KafkaAvroMessage message = kafka.generateDummy(topic, schemaRegistryUrl, "/versions/latest");
 
 kafka.send(
     topic,
@@ -111,36 +93,20 @@ kafka.send(
 
 ## Low-level API
 
-The following types remain public for advanced use cases and backwards compatibility:
+These utilities remain available when a consumer needs more control:
 
 - `SchemaRegistryClientService`
 - `KafkaRestProxyClientService`
 - `AvroDummyFiller`
 - `AvroJsonConverter`
-- `SchemaRegistryProperties` (legacy direct-client configuration)
 
-The recommended entry point for new consumers is `KafkaAvroClient`.
+Direct clients are constructed explicitly with the SSL policy:
 
-## SSL
-
-SSL certificate validation is enabled by default. Disable verification only in controlled development/test environments:
-
-```yaml
-devkafka:
-  ignore-ssl: true
+```java
+SchemaRegistryClientService registry = new SchemaRegistryClientService(false);
+KafkaRestProxyClientService restProxy = new KafkaRestProxyClientService(false);
 ```
-
-Legacy direct client construction using `SchemaRegistryProperties#setIgnoreSsl` is still supported.
 
 ## Scope
 
-This library deliberately does **not** include:
-
-- Kafka brokers or Docker Compose
-- Kubernetes manifests
-- demo applications
-- Cucumber features/step definitions
-- Spring Kafka producer/consumer clients
-- Confluent Java serializers
-
-It is intentionally specialized in **Kafka + Avro + Schema Registry + REST Proxy testing**, rather than trying to be a universal Kafka framework.
+The library intentionally does **not** include Kafka brokers, Docker Compose, Kubernetes manifests, demo applications, Cucumber step definitions, Spring Kafka producers/consumers, or Confluent Java serializers. Those concerns belong in consumer or test projects.
