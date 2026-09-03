@@ -1,28 +1,39 @@
 package com.devkafka.config;
 
+import com.devkafka.KafkaAvroClient;
 import com.devkafka.client.KafkaRestProxyClientService;
 import com.devkafka.client.SchemaRegistryClientService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-@EnableConfigurationProperties(SchemaRegistryProperties.class)
+@EnableConfigurationProperties({DevKafkaProperties.class, SchemaRegistryProperties.class})
 public class LibraryAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "library.schema", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public SchemaRegistryClientService schemaRegistryClientService(SchemaRegistryProperties properties) {
-        return new SchemaRegistryClientService(properties);
+    public SchemaRegistryClientService schemaRegistryClientService(
+            DevKafkaProperties properties,
+            SchemaRegistryProperties legacyProperties) {
+        return new SchemaRegistryClientService(properties.isIgnoreSsl() || legacyProperties.isIgnoreSsl());
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "library.restproxy", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public KafkaRestProxyClientService kafkaRestProxyClientService(SchemaRegistryProperties properties) {
-        return new KafkaRestProxyClientService(properties);
+    public KafkaRestProxyClientService kafkaRestProxyClientService(
+            DevKafkaProperties properties,
+            SchemaRegistryProperties legacyProperties) {
+        return new KafkaRestProxyClientService(properties.isIgnoreSsl() || legacyProperties.isIgnoreSsl());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public KafkaAvroClient kafkaAvroClient(
+            SchemaRegistryClientService schemaRegistryClientService,
+            KafkaRestProxyClientService kafkaRestProxyClientService,
+            DevKafkaProperties properties) {
+        return new KafkaAvroClient(schemaRegistryClientService, kafkaRestProxyClientService, properties);
     }
 }
