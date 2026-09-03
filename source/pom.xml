@@ -11,10 +11,10 @@
   <packaging>jar</packaging>
 
   <name>devtools-kafka</name>
-  <description>Minimal Spring Boot library for Schema Registry, Avro test payload generation and Kafka REST Proxy publishing.</description>
+  <description>Spring Boot library for Kafka Avro testing with Schema Registry and Kafka REST Proxy.</description>
 
   <properties>
-    <revision>0.3.0</revision>
+    <revision>0.3.1</revision>
     <sha1></sha1>
     <changelist>-SNAPSHOT</changelist>
 
