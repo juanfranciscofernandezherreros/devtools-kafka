@@ -1,6 +1,5 @@
 package com.devkafka.client;
 
-import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.SchemaRegistryException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,10 +23,6 @@ public class SchemaRegistryClientService {
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public SchemaRegistryClientService(SchemaRegistryProperties properties) {
-        this(properties.isIgnoreSsl());
-    }
 
     public SchemaRegistryClientService(boolean ignoreSsl) {
         this.httpClient = HttpClientFactory.create(ignoreSsl);

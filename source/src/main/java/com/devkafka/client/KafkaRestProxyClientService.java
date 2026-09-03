@@ -1,6 +1,5 @@
 package com.devkafka.client;
 
-import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.KafkaRestProxyException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,10 +28,6 @@ public class KafkaRestProxyClientService {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient httpClient;
-
-    public KafkaRestProxyClientService(SchemaRegistryProperties properties) {
-        this(properties.isIgnoreSsl());
-    }
 
     public KafkaRestProxyClientService(boolean ignoreSsl) {
         this.httpClient = HttpClientFactory.create(ignoreSsl);
@@ -93,7 +88,7 @@ public class KafkaRestProxyClientService {
 
             log.info("Sending Kafka message to topic {} via {}", topicName, endpoint);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new KafkaRestProxyException(
                         "REST Proxy error " + response.statusCode() + ": " + response.body());
             }
