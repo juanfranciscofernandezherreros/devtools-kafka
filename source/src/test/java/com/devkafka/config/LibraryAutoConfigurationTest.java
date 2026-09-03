@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Pure unit test (without Spring context) for LibreriaAutoConfiguration.
+ * Pure unit test (without Spring context) for LibraryAutoConfiguration.
  * All dependencies are mocked.
  */
 class LibraryAutoConfigurationTest {
@@ -34,6 +34,9 @@ class LibraryAutoConfigurationTest {
     private SchemaRegistryClientService mockSchemaRegistryClientService;
 
     @Mock
+    private KafkaRestProxyClientService mockKafkaRestProxyClientService;
+
+    @Mock
     private SchemaDownload mockSchemaDownload;
 
     @BeforeEach
@@ -45,7 +48,7 @@ class LibraryAutoConfigurationTest {
     }
 
     @Test
-    @DisplayName("✅ Creates a RestTemplate using the provided RestTemplateBuilder")
+    @DisplayName("Creates a RestTemplate using the provided RestTemplateBuilder")
     void testLibreriaRestTemplate() {
         RestTemplate result = config.libreriaRestTemplate(restTemplateBuilder);
         assertNotNull(result);
@@ -53,34 +56,36 @@ class LibraryAutoConfigurationTest {
     }
 
     @Test
-    @DisplayName("✅ Creates a SchemaRegistryClientService correctly")
+    @DisplayName("Creates a SchemaRegistryClientService correctly")
     void testSchemaRegistryClientService() {
         SchemaRegistryClientService service = config.schemaRegistryClientService(properties);
         assertNotNull(service);
-        assertTrue(service instanceof SchemaRegistryClientService);
+        assertInstanceOf(SchemaRegistryClientService.class, service);
     }
 
     @Test
-    @DisplayName("✅ Creates a SchemaDownload injecting the mocked SchemaRegistryClientService")
-    void testSchemaDownload() {
-        SchemaDownload download = config.schemaDownload(mockSchemaRegistryClientService, properties);
-        assertNotNull(download);
-        assertTrue(download instanceof SchemaDownload);
-    }
-
-    @Test
-    @DisplayName("✅ Creates a GenericRunnerBean injecting the mocked SchemaDownload")
-    void testGenericRunnerBean() {
-        GenericRunnerBean runner = config.genericRunnerBean(mockSchemaDownload);
-        assertNotNull(runner);
-        assertTrue(runner instanceof GenericRunnerBean);
-    }
-
-    @Test
-    @DisplayName("✅ Creates a KafkaRestProxyClientService correctly")
+    @DisplayName("Creates a KafkaRestProxyClientService correctly")
     void testKafkaRestProxyClientService() {
         KafkaRestProxyClientService client = config.kafkaRestProxyClientService(properties);
         assertNotNull(client);
-        assertTrue(client instanceof KafkaRestProxyClientService);
+        assertInstanceOf(KafkaRestProxyClientService.class, client);
+    }
+
+    @Test
+    @DisplayName("Creates SchemaDownload with registry and REST Proxy clients")
+    void testSchemaDownload() {
+        SchemaDownload download = config.schemaDownload(
+                mockSchemaRegistryClientService,
+                mockKafkaRestProxyClientService);
+        assertNotNull(download);
+        assertInstanceOf(SchemaDownload.class, download);
+    }
+
+    @Test
+    @DisplayName("Creates a GenericRunnerBean injecting SchemaDownload")
+    void testGenericRunnerBean() {
+        GenericRunnerBean runner = config.genericRunnerBean(mockSchemaDownload);
+        assertNotNull(runner);
+        assertInstanceOf(GenericRunnerBean.class, runner);
     }
 }
