@@ -5,27 +5,25 @@ import com.devkafka.client.KafkaRestProxyClientService;
 import com.devkafka.client.SchemaRegistryClientService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-@EnableConfigurationProperties({DevKafkaProperties.class, SchemaRegistryProperties.class})
+@EnableConfigurationProperties(DevKafkaProperties.class)
+@ConditionalOnProperty(prefix = "devkafka", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class LibraryAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SchemaRegistryClientService schemaRegistryClientService(
-            DevKafkaProperties properties,
-            SchemaRegistryProperties legacyProperties) {
-        return new SchemaRegistryClientService(properties.isIgnoreSsl() || legacyProperties.isIgnoreSsl());
+    public SchemaRegistryClientService schemaRegistryClientService(DevKafkaProperties properties) {
+        return new SchemaRegistryClientService(properties.isIgnoreSsl());
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public KafkaRestProxyClientService kafkaRestProxyClientService(
-            DevKafkaProperties properties,
-            SchemaRegistryProperties legacyProperties) {
-        return new KafkaRestProxyClientService(properties.isIgnoreSsl() || legacyProperties.isIgnoreSsl());
+    public KafkaRestProxyClientService kafkaRestProxyClientService(DevKafkaProperties properties) {
+        return new KafkaRestProxyClientService(properties.isIgnoreSsl());
     }
 
     @Bean
