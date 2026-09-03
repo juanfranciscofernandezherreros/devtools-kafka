@@ -31,7 +31,11 @@ public class KafkaRestProxyClientService {
     private final HttpClient httpClient;
 
     public KafkaRestProxyClientService(SchemaRegistryProperties properties) {
-        this.httpClient = HttpClientFactory.create(properties.isIgnoreSsl());
+        this(properties.isIgnoreSsl());
+    }
+
+    public KafkaRestProxyClientService(boolean ignoreSsl) {
+        this.httpClient = HttpClientFactory.create(ignoreSsl);
     }
 
     public List<String> listTopics(String restProxyUrl) {
