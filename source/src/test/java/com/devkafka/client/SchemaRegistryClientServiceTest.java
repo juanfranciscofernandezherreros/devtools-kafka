@@ -1,6 +1,5 @@
 package com.devkafka.client;
 
-import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.SchemaRegistryException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -24,7 +23,7 @@ class SchemaRegistryClientServiceTest {
     void setUp() throws IOException {
         server = new MockWebServer();
         server.start();
-        client = new SchemaRegistryClientService(new SchemaRegistryProperties());
+        client = new SchemaRegistryClientService(false);
     }
 
     @AfterEach
@@ -34,33 +33,24 @@ class SchemaRegistryClientServiceTest {
 
     @Test
     void getsLatestSchema() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
+        server.enqueue(new MockResponse().setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
                 .setBody("{\"schema\":\"{\\\"type\\\":\\\"string\\\"}\"}"));
-
-        String baseUrl = server.url("/subjects/").toString();
-        String schema = client.getLatestSchema(baseUrl, "customer-value", "/versions/latest");
-
+        String schema = client.getLatestSchema(server.url("/subjects/").toString(), "customer-value", "/versions/latest");
         assertEquals("{\"type\":\"string\"}", schema);
     }
 
     @Test
     void rejectsSchemaRegistryHttpError() {
         server.enqueue(new MockResponse().setResponseCode(500).setBody("error"));
-        String baseUrl = server.url("/subjects/").toString();
-
         SchemaRegistryException ex = assertThrows(SchemaRegistryException.class,
-                () -> client.getLatestSchema(baseUrl, "customer-value", "/versions/latest"));
-
+                () -> client.getLatestSchema(server.url("/subjects/").toString(), "customer-value", "/versions/latest"));
         assertTrue(ex.getMessage().contains("Schema registry fetch failed"));
     }
 
     @Test
     void listsSubjects() {
-        server.enqueue(new MockResponse().setResponseCode(200)
-                .setBody("[\"topic1-key\",\"topic1-value\"]"));
-
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("[\"topic1-key\",\"topic1-value\"]"));
         List<String> subjects = client.listSubjects(server.url("/subjects/").toString());
         assertEquals(List.of("topic1-key", "topic1-value"), subjects);
     }
@@ -68,9 +58,7 @@ class SchemaRegistryClientServiceTest {
     @Test
     void listsVersions() {
         server.enqueue(new MockResponse().setResponseCode(200).setBody("[1,2,3]"));
-        String baseUrl = server.url("/subjects/").toString();
-
-        List<Integer> versions = client.listVersions(baseUrl, "customer-value");
+        List<Integer> versions = client.listVersions(server.url("/subjects/").toString(), "customer-value");
         assertEquals(List.of(1, 2, 3), versions);
     }
 }
