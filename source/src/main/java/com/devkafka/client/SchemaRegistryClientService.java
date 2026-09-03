@@ -26,7 +26,11 @@ public class SchemaRegistryClientService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public SchemaRegistryClientService(SchemaRegistryProperties properties) {
-        this.httpClient = HttpClientFactory.create(properties.isIgnoreSsl());
+        this(properties.isIgnoreSsl());
+    }
+
+    public SchemaRegistryClientService(boolean ignoreSsl) {
+        this.httpClient = HttpClientFactory.create(ignoreSsl);
     }
 
     public String getLatestSchema(String schemaRegistry, String subject, String urlPrefix) {
