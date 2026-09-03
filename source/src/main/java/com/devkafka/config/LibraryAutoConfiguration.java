@@ -36,13 +36,25 @@ public class LibraryAutoConfiguration {
     }
 
     /**
-     * Schema downloader from Schema Registry.
+     * REST Proxy client (for listing topics and publishing messages).
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "library.restproxy", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public KafkaRestProxyClientService kafkaRestProxyClientService(SchemaRegistryProperties properties) {
+        return new KafkaRestProxyClientService(properties);
+    }
+
+    /**
+     * Coordinates schema retrieval, payload loading and Kafka publication.
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "library.schema", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public SchemaDownload schemaDownload(SchemaRegistryClientService schemaRegistryClientService, SchemaRegistryProperties properties) {
-        return new SchemaDownload(schemaRegistryClientService, properties);
+    public SchemaDownload schemaDownload(
+            SchemaRegistryClientService schemaRegistryClientService,
+            KafkaRestProxyClientService kafkaRestProxyClientService) {
+        return new SchemaDownload(schemaRegistryClientService, kafkaRestProxyClientService);
     }
 
     /**
@@ -53,15 +65,5 @@ public class LibraryAutoConfiguration {
     @ConditionalOnProperty(prefix = "library.runner", name = "enabled", havingValue = "true", matchIfMissing = true)
     public GenericRunnerBean genericRunnerBean(SchemaDownload schemaDownload) {
         return new GenericRunnerBean(schemaDownload);
-    }
-
-    /**
-     * REST Proxy client (for listing topics, sending messages, etc.).
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "library.restproxy", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public KafkaRestProxyClientService kafkaRestProxyClientService(SchemaRegistryProperties properties) {
-        return new KafkaRestProxyClientService(properties);
     }
 }
