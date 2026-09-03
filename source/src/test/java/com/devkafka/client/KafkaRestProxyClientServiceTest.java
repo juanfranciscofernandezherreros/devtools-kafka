@@ -1,5 +1,7 @@
 package com.devkafka.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.devkafka.config.SchemaRegistryProperties;
 import com.devkafka.exception.KafkaRestProxyException;
 import okhttp3.mockwebserver.MockResponse;
@@ -12,6 +14,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class KafkaRestProxyClientServiceTest {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static MockWebServer mockWebServer;
     private KafkaRestProxyClientService service;
@@ -35,20 +39,15 @@ class KafkaRestProxyClientServiceTest {
     @Test
     @DisplayName("Returns topic list correctly when receiving 200 OK")
     void testListTopics_success() {
-        // Prepare simulated REST Proxy response
         String jsonResponse = "[\"topic1\", \"topic2\", \"topic3\"]";
         mockWebServer.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody(jsonResponse)
                 .addHeader("Content-Type", "application/json"));
 
-        // Simulated server URL
         String baseUrl = mockWebServer.url("/topics").toString();
-
-        // Execute the method
         List<String> topics = service.listTopics(baseUrl);
 
-        // Verify result
         assertNotNull(topics);
         assertEquals(3, topics.size());
         assertEquals("topic1", topics.get(0));
@@ -56,7 +55,7 @@ class KafkaRestProxyClientServiceTest {
     }
 
     @Test
-    @DisplayName("Throws exception on HTTP response other than 200")
+    @DisplayName("Throws exception on topic-list HTTP response other than 200")
     void testListTopics_httpError() {
         mockWebServer.enqueue(new MockResponse()
                 .setResponseCode(404)
@@ -68,5 +67,59 @@ class KafkaRestProxyClientServiceTest {
                 service.listTopics(baseUrl));
 
         assertTrue(ex.getMessage().contains("HTTP error 404:"));
+    }
+
+    @Test
+    @DisplayName("Sends an Avro record with schemas to the requested topic")
+    void testSendAvroMessage_success() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"offsets\":[{\"partition\":0,\"offset\":1}]}"));
+
+        String restProxyTopicsUrl = mockWebServer.url("/topics").toString();
+        JsonNode key = MAPPER.readTree("{\"id\":1}");
+        JsonNode value = MAPPER.readTree("{\"name\":\"test\"}");
+
+        service.sendAvroMessage(
+                restProxyTopicsUrl,
+                "test-topic",
+                "{\"type\":\"string\"}",
+                "{\"type\":\"record\"}",
+                key,
+                value);
+
+        var request = mockWebServer.takeRequest();
+        assertEquals("POST", request.getMethod());
+        assertEquals("/topics/test-topic", request.getPath());
+        assertEquals("application/vnd.kafka.avro.v2+json", request.getHeader("Content-Type"));
+
+        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        assertEquals("{\"type\":\"string\"}", body.get("key_schema").asText());
+        assertEquals("{\"type\":\"record\"}", body.get("value_schema").asText());
+        assertEquals(1, body.get("records").get(0).get("key").get("id").asInt());
+        assertEquals("test", body.get("records").get(0).get("value").get("name").asText());
+    }
+
+    @Test
+    @DisplayName("Throws KafkaRestProxyException when publishing fails")
+    void testSendAvroMessage_httpError() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(500)
+                .setBody("{\"error\":\"internal server error\"}"));
+
+        String restProxyTopicsUrl = mockWebServer.url("/topics").toString();
+        JsonNode key = MAPPER.readTree("{\"id\":1}");
+        JsonNode value = MAPPER.readTree("{\"name\":\"test\"}");
+
+        KafkaRestProxyException ex = assertThrows(KafkaRestProxyException.class, () ->
+                service.sendAvroMessage(
+                        restProxyTopicsUrl,
+                        "test-topic",
+                        "{\"type\":\"string\"}",
+                        "{\"type\":\"record\"}",
+                        key,
+                        value));
+
+        assertTrue(ex.getMessage().contains("REST Proxy error 500"));
     }
 }
